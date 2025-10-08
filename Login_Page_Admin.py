@@ -31,7 +31,7 @@ class Inventory(QMainWindow):
 
         self.preview = QLabel("Admin")
         self.preview.setFixedSize(60, 30)
-        self.preview.setStyleSheet("background: #222222; border-radius: 6px;")
+        self.preview.setStyleSheet("background: #222222; border-radius: 6px; color: white")
         self.preview.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
         
@@ -72,7 +72,7 @@ class Inventory(QMainWindow):
         btn_layout.addWidget(self.btn_add)
         btn_widget = QWidget()
         btn_widget.setLayout(btn_layout)
-        self.btn_add.setStyleSheet("background: #222222")
+        self.btn_add.setStyleSheet("background: #222222; color: white")
 
 
         self.collapse_btn = QPushButton("☰")
@@ -213,3 +213,4 @@ if __name__ == "__main__":
    window = Inventory()
    window.show()
    sys.exit(app.exec())
+
