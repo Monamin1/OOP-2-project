@@ -77,7 +77,7 @@ class Inventory(QMainWindow):
         btn_layout.addWidget(self.btn_add)
         btn_widget = QWidget()
         btn_widget.setLayout(btn_layout)
-        self.btn_add.setStyleSheet("background: #222222")
+        self.btn_add.setStyleSheet("background: #222222; color: white")
 
 
         self.collapse_btn = QPushButton("☰")
