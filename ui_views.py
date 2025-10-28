@@ -211,7 +211,7 @@ def create_admin_login_widget(main_window):
 
     login_btn.clicked.connect(handle_admin_login)
 
-    layout.addSpacing(20)
+    layout.addSpacing(50)
     layout.addWidget(title)
     layout.addWidget(admin_label)
     layout.addSpacing(20)
