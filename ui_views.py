@@ -1,8 +1,12 @@
-from PyQt6.QtWidgets import QWidget, QVBoxLayout, QLabel, QPushButton, QTableWidget, QTableWidgetItem, QHeaderView, QHBoxLayout, QComboBox, QLineEdit, QMessageBox
+from PyQt6.QtWidgets import (QWidget, QVBoxLayout, QLabel, QPushButton, QTableWidget, 
+                             QTableWidgetItem, QHeaderView, QHBoxLayout, QComboBox, QLineEdit, 
+                             QMessageBox, QDialog, QTextEdit
+)
 from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QFont, QColor
 
 from ui_components import create_styled_line_edit
+from feedback_email import send_feedback_email
 
 def _create_base_login_widget():
     """Creates the base widget and layout for login forms."""
@@ -29,7 +33,7 @@ def create_consumer_login_widget(main_window):
     login_btn.setFixedSize(120, 30)
     login_btn.setStyleSheet("background: #222222; color: white; border-radius: 5px;")
 
-    layout.addSpacing(20)
+    layout.addSpacing(50)
     layout.addWidget(title)
     layout.addSpacing(20)
     layout.addWidget(name_input)
@@ -222,3 +226,48 @@ def create_admin_login_widget(main_window):
     layout.addStretch()
 
     return view_widget
+
+class FeedbackDialog(QDialog):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.setWindowTitle("Feedback")
+        self.setFixedSize(400, 300)
+
+        layout = QVBoxLayout(self)
+        layout.setContentsMargins(20, 20, 20, 20)
+        layout.setSpacing(15)
+
+        label = QLabel("We'd love to hear your feedback:")
+        self.feedback_input = QTextEdit()
+        self.feedback_input.setPlaceholderText("Type your feedback here...")
+        self.feedback_input.setStyleSheet("""
+            QTextEdit {
+                border: 1px solid #cccccc;
+                border-radius: 5px;
+                padding: 8px;
+                font-size: 14px;
+            }
+        """)
+
+        submit_btn = QPushButton("Submit")
+        submit_btn.setStyleSheet("background: #222222; color: white; border-radius: 5px; padding: 5px 10px;")
+        submit_btn.clicked.connect(self.submit_feedback)
+
+        layout.addWidget(label)
+        layout.addWidget(self.feedback_input)
+        layout.addWidget(submit_btn)
+
+    def submit_feedback(self):
+        text = self.feedback_input.toPlainText().strip()
+        if not text:
+            QMessageBox.warning(self, "Empty Feedback", "Please enter some feedback before submitting.")
+            return
+
+        success, error = send_feedback_email(text)
+        
+        if success:
+            QMessageBox.information(self, "Thank You", "Your feedback has been sent successfully.")
+            self.accept()
+        else:
+            QMessageBox.critical(self, "Error", f"Failed to send email:\n{error}")
+
