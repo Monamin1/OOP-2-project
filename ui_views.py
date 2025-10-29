@@ -1,8 +1,8 @@
 from PyQt6.QtWidgets import (QWidget, QVBoxLayout, QLabel, QPushButton, QTableWidget, 
                              QTableWidgetItem, QHeaderView, QHBoxLayout, QComboBox, QLineEdit, 
-                             QMessageBox, QDialog, QTextEdit
+                             QMessageBox, QDialog, QTextEdit, QProgressBar
 )
-from PyQt6.QtCore import Qt
+from PyQt6.QtCore import Qt, QThread, pyqtSignal
 from PyQt6.QtGui import QFont, QColor
 
 from ui_components import create_styled_line_edit
@@ -46,7 +46,6 @@ def create_consumer_login_widget(main_window):
     return view_widget
 
 def create_inventory_widget(main_window):
-    """Creates the inventory view widget with a product table."""
     view_widget = QWidget()
     layout = QVBoxLayout(view_widget)
     layout.setContentsMargins(20, 20, 20, 20)
@@ -67,14 +66,23 @@ def create_inventory_widget(main_window):
     header.setSectionResizeMode(2, QHeaderView.ResizeMode.Interactive)
     table.setStyleSheet("""
         QTableWidget {
+            background-color: #ffffff;
+            color: #000000;
             border: 1px solid #cccccc;
             gridline-color: #e0e0e0;
+            selection-background-color: #0078d7;
+            selection-color: white;
         }
         QHeaderView::section {
             background-color: #f0f0f0;
+            color: #000000;
             padding: 4px;
             border: 1px solid #cccccc;
             font-size: 14px;
+        }
+        QTableWidget QTableCornerButton::section {
+            background-color: #f0f0f0;
+            border: 1px solid #cccccc;
         }
     """)
 
@@ -227,17 +235,48 @@ def create_admin_login_widget(main_window):
 
     return view_widget
 
+
+
+class FeedbackSender(QThread):
+    finished = pyqtSignal(bool, str)
+
+    def __init__(self, message: str):
+        super().__init__()
+        self.message = message
+
+    def run(self):
+        success, error = send_feedback_email(self.message)
+        self.finished.emit(success, error)
+
+
 class FeedbackDialog(QDialog):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setWindowTitle("Feedback")
-        self.setFixedSize(400, 300)
+        self.setFixedSize(400, 370)
 
         layout = QVBoxLayout(self)
         layout.setContentsMargins(20, 20, 20, 20)
         layout.setSpacing(15)
 
+        # --- Title ---
         label = QLabel("We'd love to hear your feedback:")
+        layout.addWidget(label)
+
+        # --- Name input ---
+        self.name_input = QLineEdit()
+        self.name_input.setPlaceholderText("Your name")
+        self.name_input.setStyleSheet("""
+            QLineEdit {
+                border: 1px solid #cccccc;
+                border-radius: 5px;
+                padding: 5px;
+                font-size: 14px;
+            }
+        """)
+        layout.addWidget(self.name_input)
+
+        # --- Feedback input ---
         self.feedback_input = QTextEdit()
         self.feedback_input.setPlaceholderText("Type your feedback here...")
         self.feedback_input.setStyleSheet("""
@@ -248,26 +287,58 @@ class FeedbackDialog(QDialog):
                 font-size: 14px;
             }
         """)
-
-        submit_btn = QPushButton("Submit")
-        submit_btn.setStyleSheet("background: #222222; color: white; border-radius: 5px; padding: 5px 10px;")
-        submit_btn.clicked.connect(self.submit_feedback)
-
-        layout.addWidget(label)
         layout.addWidget(self.feedback_input)
-        layout.addWidget(submit_btn)
+
+        #Submit button
+        self.submit_btn = QPushButton("Submit")
+        self.submit_btn.setStyleSheet("background: #222222; color: white; border-radius: 5px; padding: 5px 10px;")
+        self.submit_btn.clicked.connect(self.submit_feedback)
+        layout.addWidget(self.submit_btn)
+
+        #Loading overlay
+        self.loading_overlay = QWidget(self)
+        self.loading_overlay.setGeometry(0, 0, 400, 370)
+        self.loading_overlay.setStyleSheet("background-color: rgba(255, 255, 255, 200);")
+        overlay_layout = QVBoxLayout(self.loading_overlay)
+        overlay_layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
+
+        loading_label = QLabel("Sending feedback...")
+        loading_label.setStyleSheet("font-size: 16px; color: #333; font-weight: bold;")
+        overlay_layout.addWidget(loading_label)
+
+        self.progress = QProgressBar()
+        self.progress.setRange(0, 0)
+        overlay_layout.addWidget(self.progress)
+
+        self.loading_overlay.hide()
 
     def submit_feedback(self):
-        text = self.feedback_input.toPlainText().strip()
-        if not text:
+        name = self.name_input.text().strip()
+        feedback = self.feedback_input.toPlainText().strip()
+
+        if not name:
+            QMessageBox.warning(self, "Missing Name", "Please enter your name before submitting.")
+            return
+        if not feedback:
             QMessageBox.warning(self, "Empty Feedback", "Please enter some feedback before submitting.")
             return
 
-        success, error = send_feedback_email(text)
-        
+        full_message = f"Reviewer Name: {name}\n\nFeedback:\n{feedback}"
+
+        self.loading_overlay.show()
+        self.submit_btn.setEnabled(False)
+
+        self.thread = FeedbackSender(full_message)
+        self.thread.finished.connect(self.on_feedback_sent)
+        self.thread.start()
+
+    def on_feedback_sent(self, success, error):
+        """Handle thread result."""
+        self.loading_overlay.hide()
+        self.submit_btn.setEnabled(True)
+
         if success:
             QMessageBox.information(self, "Thank You", "Your feedback has been sent successfully.")
             self.accept()
         else:
             QMessageBox.critical(self, "Error", f"Failed to send email:\n{error}")
-

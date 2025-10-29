@@ -20,6 +20,28 @@ class MainWindow(QMainWindow):
 
         self.setup_ui()
         self.switch_view(initial_view)
+        self.setStyleSheet("""
+            QWidget {
+                background-color: #ffffff;
+                color: #000000;
+            }
+            QLineEdit, QTextEdit {
+                background-color: #ffffff;
+                color: #000000;
+                border: 1px solid #cccccc;
+            }
+            QPushButton {
+                color: #000000;
+                background-color: #f7f7f7;
+                border: 1px solid #cccccc;
+                border-radius: 4px;
+                padding: 4px 8px;
+            }
+            QPushButton:hover {
+                background-color: #e0e0e0;
+            }
+        """)
+
 
     def setup_ui(self):
         # Main container widget
