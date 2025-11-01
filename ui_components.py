@@ -3,7 +3,6 @@ from PyQt6.QtCore import QRect, QPropertyAnimation, QEasingCurve, Qt
 
 
 def create_styled_line_edit(placeholder_text):
-    """Creates a QLineEdit with a standard style."""
     line_edit = QLineEdit()
     line_edit.setPlaceholderText(placeholder_text)
     line_edit.setFixedSize(200, 30)
@@ -18,7 +17,6 @@ def create_styled_line_edit(placeholder_text):
     return line_edit
 
 def create_menu_button():
-    """Creates the hamburger menu button."""
     collapse_btn = QPushButton("☰")
     collapse_btn.setFixedSize(30, 30)
     collapse_btn.setStyleSheet("""
@@ -79,7 +77,6 @@ class CollapsablePanel(QWidget):
         self.animation.setEasingCurve(QEasingCurve.Type.OutCubic)
 
     def add_menu_item(self, text, on_click):
-        """Adds a button to the menu."""
         button = QPushButton(text)
         button.setStyleSheet("""
             QPushButton {
@@ -88,7 +85,13 @@ class CollapsablePanel(QWidget):
             }
             QPushButton:hover { background-color: #f0f0f0; }
         """)
-        button.clicked.connect(on_click)
+        
+        def wrapped_click():
+            on_click()
+            if self.is_visible:
+                self.toggle()  # Automatically close after clicking any menu item
+
+        button.clicked.connect(wrapped_click)
         self.menu_items_layout.addWidget(button)
 
     def toggle(self):

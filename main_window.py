@@ -5,6 +5,7 @@ from ui_components import CollapsablePanel, create_menu_button
 from ui_views import (create_admin_login_widget, create_consumer_login_widget, create_inventory_widget,
                       FeedbackDialog
 )
+from customer_page import create_customer_page
 
 class MainWindow(QMainWindow):
     def __init__(self, initial_view='consumer'):
@@ -15,7 +16,8 @@ class MainWindow(QMainWindow):
         self.view_creators = {
             'consumer': create_consumer_login_widget,
             'admin': create_admin_login_widget,
-            'inventory': create_inventory_widget
+            'inventory': create_inventory_widget,
+            'customer': create_customer_page,
         }
 
         self.setup_ui()
@@ -72,14 +74,21 @@ class MainWindow(QMainWindow):
         self.panel = CollapsablePanel(self)
         self.panel.add_menu_item("Consumer", lambda: self.switch_view('consumer'))
         self.panel.add_menu_item("Admin", lambda: self.switch_view('admin'))
-        self.panel.add_menu_item("Inventory", lambda: self.switch_view('inventory'))
+        #self.panel.add_menu_item("Inventory", lambda: self.switch_view('inventory'))
         self.panel.add_menu_item("Feedback", self.show_feedback)
+
+    def _handle_button_click(self, view_name):
+        if self.parent and hasattr(self.parent, "switch_view"):
+            self.parent.switch_view(view_name)
+
+        if self.is_visible:
+            self.toggle()
+
 
     def toggle_panel(self):
         self.panel.toggle()
 
     def switch_view(self, view_name):
-        """Switches the central widget to the specified view."""
         if view_name in self.view_creators:
             
             for i in reversed(range(self.view_layout.count())):
@@ -90,9 +99,6 @@ class MainWindow(QMainWindow):
             new_view = self.view_creators[view_name](self)
             self.view_layout.addWidget(new_view)
 
-            # Close the panel after switching
-            if self.panel.is_visible:
-                self.panel.toggle()
         else:
             print(f"Error: View '{view_name}' not found.")
 
@@ -100,6 +106,3 @@ class MainWindow(QMainWindow):
 
         dialog = FeedbackDialog(self)
         dialog.exec()
-        
-        if self.panel.is_visible:
-            self.panel.toggle()
