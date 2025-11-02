@@ -6,14 +6,18 @@ from ui_views import (create_admin_login_widget, create_consumer_login_widget, c
                       FeedbackDialog
 )
 from customer_page import create_customer_page
+from startup_views import create_startup_splash, create_mode_select_view
+
 
 class MainWindow(QMainWindow):
     def __init__(self, initial_view='consumer'):
         super().__init__()
         self.setWindowTitle("Login")
-        self.resize(800, 500)
+        self.resize(1200, 650)
 
         self.view_creators = {
+            'startup': create_startup_splash,
+            'mode_select': create_mode_select_view,
             'consumer': create_consumer_login_widget,
             'admin': create_admin_login_widget,
             'inventory': create_inventory_widget,
@@ -43,7 +47,6 @@ class MainWindow(QMainWindow):
                 background-color: #e0e0e0;
             }
         """)
-
 
     def setup_ui(self):
         # Main container widget
@@ -90,7 +93,7 @@ class MainWindow(QMainWindow):
 
     def switch_view(self, view_name):
         if view_name in self.view_creators:
-            
+ 
             for i in reversed(range(self.view_layout.count())):
                 widget_to_remove = self.view_layout.itemAt(i).widget()
                 if widget_to_remove:
@@ -98,6 +101,13 @@ class MainWindow(QMainWindow):
 
             new_view = self.view_creators[view_name](self)
             self.view_layout.addWidget(new_view)
+
+            if view_name in ("consumer", "admin"):
+                self.collapse_btn.show()
+            else:
+                self.collapse_btn.hide()
+                if self.panel.is_visible:
+                    self.panel.toggle()
 
         else:
             print(f"Error: View '{view_name}' not found.")

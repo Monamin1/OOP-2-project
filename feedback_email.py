@@ -5,8 +5,6 @@ import smtplib
 from email.mime.text import MIMEText
 from datetime import datetime
 
-# --- Cross-platform safe env loading ---
-# Try loading from feedback_email.py folder and main.py folder
 base_dir = Path(__file__).resolve().parent
 env_paths = [
     base_dir / ".env",

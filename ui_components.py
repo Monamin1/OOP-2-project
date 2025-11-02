@@ -89,7 +89,7 @@ class CollapsablePanel(QWidget):
         def wrapped_click():
             on_click()
             if self.is_visible:
-                self.toggle()  # Automatically close after clicking any menu item
+                self.toggle()
 
         button.clicked.connect(wrapped_click)
         self.menu_items_layout.addWidget(button)

@@ -3,10 +3,11 @@ from PyQt6.QtWidgets import (QWidget, QVBoxLayout, QLabel, QPushButton, QTableWi
                              QMessageBox, QDialog, QTextEdit, QProgressBar
 )
 from PyQt6.QtCore import Qt, QThread, pyqtSignal
-from PyQt6.QtGui import QFont, QColor
+from PyQt6.QtGui import QFont, QColor, QPixmap
 
 from ui_components import create_styled_line_edit
 from feedback_email import send_feedback_email
+import os
 
 def _create_base_login_widget():
     view_widget = QWidget()
@@ -26,6 +27,23 @@ def create_consumer_login_widget(parent=None):
     title.setStyleSheet("font-size: 45px; color: #000000;")
     title.setFont(QFont("Times New Roman"))
     title.setAlignment(Qt.AlignmentFlag.AlignCenter)
+
+    icon_label = QLabel()
+    icon_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+
+    base_dir = os.path.dirname(os.path.abspath(__file__))
+    icon_path = os.path.join(base_dir, "assets", "login_icon.png")
+
+    pixmap = QPixmap(icon_path)
+
+    if not pixmap.isNull():
+        icon_label.setPixmap(
+            pixmap.scaled(80, 80,
+                        Qt.AspectRatioMode.KeepAspectRatio,
+                        Qt.TransformationMode.SmoothTransformation)
+        )
+    layout.addWidget(icon_label, alignment=Qt.AlignmentFlag.AlignCenter)
+    layout.addSpacing(10)
     layout.addWidget(title)
 
     layout.addSpacing(20)
@@ -63,6 +81,22 @@ def create_inventory_widget(main_window):
     title.setAlignment(Qt.AlignmentFlag.AlignCenter)
     title.setStyleSheet("font-size: 45px; color: #000000;")
     title.setFont(QFont("Times New Roman"))
+
+    icon_label = QLabel()
+    icon_label.setAlignment(Qt.AlignmentFlag.AlignRight)
+
+    base_dir = os.path.dirname(os.path.abspath(__file__))
+    icon_path = os.path.join(base_dir, "assets", "login_icon.png")
+
+    pixmap = QPixmap(icon_path)
+
+    if not pixmap.isNull():
+        icon_label.setPixmap(
+            pixmap.scaled(80, 80,
+                        Qt.AspectRatioMode.KeepAspectRatio,
+                        Qt.TransformationMode.SmoothTransformation)
+        )
+    layout.addWidget(icon_label, alignment=Qt.AlignmentFlag.AlignCenter)
 
     table = QTableWidget()
     table.setColumnCount(3)
@@ -187,6 +221,19 @@ def create_inventory_widget(main_window):
     layout.addWidget(table)
     layout.addLayout(button_layout)
 
+    logout_btn = QPushButton("Log Out")
+    logout_btn.setFixedWidth(120)
+    logout_btn.setStyleSheet("""
+        QPushButton {
+            background: #dc3545; color: white;
+            border: none; border-radius: 5px;
+            padding: 6px 12px;
+        }
+        QPushButton:hover { background: #b02a37; }
+    """)
+    logout_btn.clicked.connect(lambda: main_window.switch_view('admin'))
+    layout.addWidget(logout_btn, alignment=Qt.AlignmentFlag.AlignCenter)
+
     return view_widget
 
 def create_admin_login_widget(main_window):
@@ -227,6 +274,24 @@ def create_admin_login_widget(main_window):
     login_btn.clicked.connect(handle_admin_login)
 
     layout.addSpacing(39)
+
+    icon_label = QLabel()
+    icon_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+
+    base_dir = os.path.dirname(os.path.abspath(__file__))
+    icon_path = os.path.join(base_dir, "assets", "login_icon.png")
+
+    pixmap = QPixmap(icon_path)
+
+    if not pixmap.isNull():
+        icon_label.setPixmap(
+            pixmap.scaled(80, 80,
+                        Qt.AspectRatioMode.KeepAspectRatio,
+                        Qt.TransformationMode.SmoothTransformation)
+        )
+    layout.addWidget(icon_label, alignment=Qt.AlignmentFlag.AlignCenter)
+
+    layout.addSpacing(10)
     layout.addWidget(title)
     layout.addWidget(admin_label, alignment=Qt.AlignmentFlag.AlignCenter)
     layout.addSpacing(20)

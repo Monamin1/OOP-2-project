@@ -1,9 +1,9 @@
-import sys
 from PyQt6.QtWidgets import QApplication
 from main_window import MainWindow
+import sys
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
-    window = MainWindow(initial_view='consumer')
+    window = MainWindow(initial_view='startup')
     window.show()
     sys.exit(app.exec())

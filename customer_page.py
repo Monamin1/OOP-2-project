@@ -1,59 +1,96 @@
 from PyQt6.QtWidgets import (
-    QWidget, QVBoxLayout, QLabel, QPushButton, QGridLayout,
-    QMessageBox, QScrollArea, QGroupBox, QHBoxLayout
+    QWidget, QVBoxLayout, QLabel, QPushButton, QScrollArea,
+    QGroupBox, QHBoxLayout, QSpinBox, QMessageBox, QComboBox
 )
-from PyQt6.QtGui import QPixmap
 from PyQt6.QtCore import Qt
+from PyQt6.QtGui import QPixmap
+import os
 
 
 def create_customer_page(parent=None):
-    """Customer marketplace-like page."""
     widget = QWidget(parent)
     layout = QVBoxLayout(widget)
     layout.setAlignment(Qt.AlignmentFlag.AlignTop)
     layout.setContentsMargins(20, 20, 20, 20)
     layout.setSpacing(15)
 
-    # Title
-    title = QLabel("🛍️ Customer Marketplace (dipa tapos)")
+    icon_label = QLabel()
+    icon_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+
+    base_dir = os.path.dirname(os.path.abspath(__file__))
+    icon_path = os.path.join(base_dir, "assets", "login_icon.png")
+
+    pixmap = QPixmap(icon_path)
+
+    if not pixmap.isNull():
+        icon_label.setPixmap(
+            pixmap.scaled(80, 80,
+                        Qt.AspectRatioMode.KeepAspectRatio,
+                        Qt.TransformationMode.SmoothTransformation)
+        )
+    layout.addWidget(icon_label, alignment=Qt.AlignmentFlag.AlignCenter)
+
+    title = QLabel("👜 Product Catalog")
     title.setAlignment(Qt.AlignmentFlag.AlignCenter)
-    title.setStyleSheet("font-size: 28px; font-weight: bold; color: #222;")
+    title.setStyleSheet("font-size: 30px; font-weight: bold; color: #222;")
     layout.addWidget(title)
 
-    desc = QLabel("Browse our products and place your orders easily below.")
+    desc = QLabel("Select color and quantity for each item, then click Buy to order.")
     desc.setAlignment(Qt.AlignmentFlag.AlignCenter)
     desc.setStyleSheet("color: #555; font-size: 14px; margin-bottom: 10px;")
     layout.addWidget(desc)
 
-    # Scroll area for products
-    scroll_area = QScrollArea()
-    scroll_area.setWidgetResizable(True)
-    scroll_content = QWidget()
-    scroll_layout = QGridLayout(scroll_content)
-    scroll_layout.setSpacing(20)
-    scroll_layout.setContentsMargins(10, 10, 10, 10)
+    # Scroll area to hold categories
+    scroll = QScrollArea()
+    scroll.setWidgetResizable(True)
+    content = QWidget()
+    content_layout = QVBoxLayout(content)
+    content_layout.setAlignment(Qt.AlignmentFlag.AlignTop)
+    content_layout.setSpacing(20)
 
-    # Sample product data (you can later load from DB or CSV)
-    products = [
-        {"name": "Canvas Tote Bag", "price": 299, "image": "👜"},
-        {"name": "Travel Backpack", "price": 799, "image": "🎒"},
-        {"name": "Leather Keychain", "price": 149, "image": "🔑"},
-        {"name": "Minimalist Purse", "price": 499, "image": "👛"},
-    ]
+    # Product Catalog
+    catalog = {
+        "Shoulder Bag": [
+            {"price": 300, "material": "Crocodile Texture", "name": "CARA", "colors": ["Blue/Pink", "Red/Blue", "Pink/Brown", "Brown/Pink", "Pink/Blue", "Tan/Beige", "Beige/Black", "Blue/Tan", "Black/Red", "Brown/Beige"]},
+            {"price": 1800, "material": "Real Leather", "name": "LIA", "colors": ["Brown", "Black", "Tan"]},
+            {"price": 1200, "material": "Real Leather", "name": "QUI", "colors": ["Black"]},
+            {"price": 350, "material": "Faux Leather", "name": "ANA", "colors": ["Brown", "Taupe", "Lt. Green", "Dark Brown"]},
+            {"price": 350, "material": "Faux Leather", "name": "HYE", "colors": ["Gray", "Choco Brown", "Black"]},
+            {"price": 300, "material": "Faux Leather", "name": "Baby", "colors": ["Brown"]},
+            {"price": 280, "material": "Faux Leather", "name": "BIA", "colors": ["Lt. Green"]},
+        ],
+        "Sling Bag": [
+            {"price": 1000, "material": "Real Leather", "name": "NYA", "colors": ["Tan", "Black"]},
+            {"price": 680, "material": "Leather", "name": "ORA", "colors": ["Tan", "Black"]},
+        ],
+        "Tote Bag": [
+            {"price": 1200, "material": "Real Leather", "name": "Normal", "colors": ["Standard"]},
+            {"price": 1800, "material": "Real Leather", "name": "Large", "colors": ["Standard"]},
+        ],
+        "Coin Purse": [
+            {"price": 70, "material": "Faux Leather", "name": "MEG", "colors": ["Brown", "Mocca", "Red", "Tan", "R. Blue", "D. Brown"]},
+            {"price": 70, "material": "Faux Leather", "name": "AURA", "colors": ["Tan", "Brown G", "Camel", "Taupe", "Red", "Black", "Brown", "Gray"]},
+            {"price": 50, "material": "Faux Leather", "name": "EVA", "colors": ["Blue", "Tan", "Old Rose", "Mocca", "Gray", "Red", "Taupe", "Brown", "Camel", "Black"]},
+            {"price": 50, "material": "Faux Leather", "name": "AVA", "colors": ["Brown", "Tan", "Red", "Black", "Old Rose", "Mocca", "Taupe", "Beige", "Gray", "Blue", "Lt. Green"]},
+        ],
+        "Saddle Bag": [
+            {"price": "1800", "material": "Faux Leather", "name": "Standard", "colors": ["Standard"]},
+            {"price": "5500 - 6000", "material": "Leather", "name": "Customized", "colors": ["Customizable"]},
+        ],
+    }
 
-    # Grid layout for products
-    row, col = 0, 0
-    for product in products:
-        card = create_product_card(product, parent)
-        scroll_layout.addWidget(card, row, col)
-        col += 1
-        if col == 3:
-            col = 0
-            row += 1
+    for category, items in catalog.items():
+        section_label = QLabel(f"– {category} –")
+        section_label.setStyleSheet("font-size: 20px; font-weight: bold; color: #222; margin-top: 10px;")
+        content_layout.addWidget(section_label)
 
-    scroll_content.setLayout(scroll_layout)
-    scroll_area.setWidget(scroll_content)
-    layout.addWidget(scroll_area)
+        for item in items:
+            card = create_product_card(item)
+            content_layout.addWidget(card)
+
+    content_layout.addStretch(1)
+    scroll.setWidget(content)
+    layout.addWidget(scroll)
 
     # Logout button
     logout_btn = QPushButton("Log Out")
@@ -71,56 +108,79 @@ def create_customer_page(parent=None):
     return widget
 
 
-def create_product_card(product, parent=None):
-    """Creates a single product card with image, name, price, and order button."""
+def create_product_card(product):
     card = QGroupBox()
     card.setStyleSheet("""
         QGroupBox {
-            border: 1px solid #ccc; border-radius: 8px; 
-            padding: 10px; background: #fafafa;
+            border: 1px solid #ccc; border-radius: 8px;
+            background: #fafafa; padding: 10px;
         }
-        QLabel { color: #333; }
     """)
-    layout = QVBoxLayout(card)
-    layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
-
-    # Product "image" (emoji for now)
-    img_label = QLabel(product["image"])
-    img_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-    img_label.setStyleSheet("font-size: 48px;")
-    layout.addWidget(img_label)
-
-    # Product name
-    name_label = QLabel(product["name"])
-    name_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-    name_label.setStyleSheet("font-size: 16px; font-weight: bold;")
-    layout.addWidget(name_label)
+    layout = QHBoxLayout(card)
+    layout.setContentsMargins(15, 5, 15, 5)
+    layout.setSpacing(20)
 
     # Price
-    price_label = QLabel(f"₱{product['price']}")
-    price_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-    price_label.setStyleSheet("font-size: 14px; color: #555;")
-    layout.addWidget(price_label)
+    price_label = QLabel(f"{product['price']} php")
+    price_label.setStyleSheet("font-size: 14px; font-weight: bold; color: #222;")
+    layout.addWidget(price_label, stretch=1)
 
-    # Order button
-    order_btn = QPushButton("Place Order")
-    order_btn.setStyleSheet("""
+    # Material and Name
+    name_label = QLabel(f"{product['material']}: {product['name']}")
+    name_label.setStyleSheet("font-size: 14px; color: #333;")
+    layout.addWidget(name_label, stretch=2)
+
+    # Color selector
+    color_box = QComboBox()
+    color_box.addItems(product["colors"])
+    color_box.setFixedWidth(140)
+    layout.addWidget(color_box)
+
+    # Quantity selector
+    qty_spin = QSpinBox()
+    qty_spin.setRange(1, 99)
+    qty_spin.setValue(1)
+    qty_spin.setFixedWidth(60)
+    layout.addWidget(qty_spin)
+
+    # Buy button
+    buy_btn = QPushButton("Buy")
+    buy_btn.setStyleSheet("""
         QPushButton {
             background: #28a745; color: white;
             border: none; padding: 6px 12px; border-radius: 5px;
         }
         QPushButton:hover { background: #218838; }
     """)
-    order_btn.clicked.connect(lambda: place_order(product, parent))
-    layout.addWidget(order_btn, alignment=Qt.AlignmentFlag.AlignCenter)
+
+    def buy_action():
+        qty = qty_spin.value()
+        color = color_box.currentText()
+        QMessageBox.information(
+            card,
+            "Order Placed",
+            f"✅ You ordered {qty} × {product['name']}\n\n"
+            f"Material: {product['material']}\n"
+            f"Color: {color}\n"
+            f"Price: {product['price']} php each\n\n"
+            f"Total: {calculate_total(product['price'], qty)} php"
+        )
+
+    buy_btn.clicked.connect(buy_action)
+    layout.addWidget(buy_btn)
 
     return card
 
 
-def place_order(product, parent=None):
-    """Simulate order placement."""
-    msg = QMessageBox()
-    msg.setIcon(QMessageBox.Icon.Information)
-    msg.setWindowTitle("Order Placed")
-    msg.setText(f"✅ You ordered: {product['name']}\nPrice: ₱{product['price']}\n\nThank you for your purchase!")
-    msg.exec()
+def calculate_total(price, qty):
+    if isinstance(price, (int, float)):
+        return price * qty
+    if isinstance(price, str) and "-" in price:
+        parts = price.replace("php", "").split("-")
+        try:
+            low = int(parts[0].strip())
+            high = int(parts[1].strip())
+            return f"{low * qty} - {high * qty}"
+        except ValueError:
+            return price
+    return price
