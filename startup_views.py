@@ -80,11 +80,9 @@ def create_mode_select_view(parent=None):
             }
         """)
 
-    # Add each button centered horizontally
     layout.addWidget(customer_btn, alignment=Qt.AlignmentFlag.AlignHCenter)
     layout.addWidget(admin_btn, alignment=Qt.AlignmentFlag.AlignHCenter)
 
-    # push remaining space below buttons (keeps them vertically centered-ish)
     layout.addStretch(1)
 
     customer_btn.clicked.connect(lambda: parent.switch_view("consumer"))

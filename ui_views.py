@@ -169,7 +169,7 @@ def create_inventory_widget(main_window):
         table.setItem(row, 1, QTableWidgetItem(prod_name)) 
         quantity_item = QTableWidgetItem(quantity)
         table.setItem(row, 2, quantity_item)
-        # Format the initial data
+
         format_quantity_cell(row, 2)
 
     # Button Section
@@ -182,7 +182,6 @@ def create_inventory_widget(main_window):
     delete_row_btn = QPushButton("Delete Selected Row")
     delete_row_btn.setStyleSheet("background: #dc3545; color: white; border-radius: 5px; padding: 5px 10px;")
 
-    # Connect cell change signal to format function
     table.cellChanged.connect(format_quantity_cell)
 
 
