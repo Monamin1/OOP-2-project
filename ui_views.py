@@ -64,7 +64,25 @@ def create_consumer_login_widget(parent=None):
     layout.addWidget(login_button, alignment=Qt.AlignmentFlag.AlignCenter)
 
     def handle_login():
-        if parent and hasattr(parent, "switch_view"):
+        name = name_input.text().strip()
+        address = address_input.text().strip()
+        age = age_input.text().strip()
+
+        if not name or not address or not age:
+            QMessageBox.warning(widget, "Missing Info", "Please fill in all fields.")
+            return
+
+        # Store login info in main window
+        if parent:
+            parent.active_user = {
+                "name": name,
+                "address": address,
+                "age": age
+            }
+            print("✅ Logged in user:", parent.active_user)
+
+        # Switch to customer page
+        if hasattr(parent, "switch_view"):
             parent.switch_view("customer")
 
     login_button.clicked.connect(handle_login)
@@ -89,24 +107,30 @@ def create_inventory_widget(main_window):
     icon_path = os.path.join(base_dir, "assets", "login_icon.png")
 
     pixmap = QPixmap(icon_path)
-
     if not pixmap.isNull():
         icon_label.setPixmap(
             pixmap.scaled(80, 80,
                         Qt.AspectRatioMode.KeepAspectRatio,
                         Qt.TransformationMode.SmoothTransformation)
         )
-    layout.addWidget(icon_label, alignment=Qt.AlignmentFlag.AlignCenter)
 
-    table = QTableWidget()
-    table.setColumnCount(3)
-    table.setHorizontalHeaderLabels(["Product Type", "Product Name", "Quantity"])
+    #inventory table
+    inventory_table = QTableWidget()
+    inventory_table.setColumnCount(4)
+    inventory_table.setHorizontalHeaderLabels(["Category", "Product", "Quantity", "Status"])
 
-    header = table.horizontalHeader()
+    header = inventory_table.horizontalHeader()
+    header.setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
+    inventory_table.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)
+    layout.addWidget(inventory_table)
+
+    header = inventory_table.horizontalHeader()
     header.setSectionResizeMode(0, QHeaderView.ResizeMode.Stretch)
     header.setSectionResizeMode(1, QHeaderView.ResizeMode.Stretch)
     header.setSectionResizeMode(2, QHeaderView.ResizeMode.Interactive)
-    table.setStyleSheet("""
+    header.setSectionResizeMode(3, QHeaderView.ResizeMode.Interactive)
+
+    inventory_table.setStyleSheet("""
         QTableWidget {
             background-color: #ffffff;
             color: #000000;
@@ -122,59 +146,110 @@ def create_inventory_widget(main_window):
             border: 1px solid #cccccc;
             font-size: 14px;
         }
-        QTableWidget QTableCornerButton::section {
-            background-color: #f0f0f0;
+    """)
+
+    def colorize_quantity_item(item):
+        try:
+            quantity = int(item.text())
+        except (ValueError, TypeError):
+            item.setBackground(QColor("white"))
+            item.setForeground(QColor("black"))
+            return "Unknown"
+
+        if quantity > 15:
+            item.setBackground(QColor("#28a745"))
+            item.setForeground(QColor("white"))
+            return "Good"
+        elif quantity >= 5:
+            item.setBackground(QColor("#ffc107"))
+            item.setForeground(QColor("black"))
+            return "Low"
+        else:
+            item.setBackground(QColor("#dc3545"))
+            item.setForeground(QColor("white"))
+            return "Empty / Critical"
+
+    # orders table
+    orders_title = QLabel("Customer Orders")
+    orders_title.setAlignment(Qt.AlignmentFlag.AlignCenter)
+    orders_title.setStyleSheet("font-size: 45px; margin-top: 20px;")
+    orders_title.setFont(QFont("Times New Roman"))
+
+    orders_table = QTableWidget()
+    orders_table.setColumnCount(6)
+    orders_table.setHorizontalHeaderLabels(["Buyer", "Address", "Age", "Product", "Quantity", "Total"])
+    orders_header = orders_table.horizontalHeader()
+    orders_header.setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
+    orders_table.setStyleSheet("""
+        QTableWidget {
+            background-color: #ffffff;
+            color: #000000;
             border: 1px solid #cccccc;
+            gridline-color: #e0e0e0;
         }
     """)
 
-    def format_quantity_cell(row, column):
-        if column != 2:
-            return
+    def refresh_stocks():
+        inventory = getattr(main_window, "inventory_data", {})
+        inventory_table.blockSignals(True)
+        inventory_table.setRowCount(len(inventory))
+        inventory_table.setStyleSheet("""
+            QTableWidget { background-color: #ffffff; color: #000; border: 1px solid #ccc; }
+            QHeaderView::section { background-color: #f0f0f0; color: #000; font-weight: bold; }
+        """)
 
-        item = table.item(row, column)
-        if not item:
-            return
+        for row, (prod_name, info) in enumerate(inventory.items()):
+            prod_type = info.get("type", "")
+            qty = int(info.get("quantity", 0))
 
-        try:
-            quantity = int(item.text())
-            if quantity > 15:
-                item.setBackground(QColor("#28a745"))
-            elif quantity >= 5:
-                item.setBackground(QColor("#ffc107")) 
+            # Fill cells
+            inventory_table.setItem(row, 0, QTableWidgetItem(prod_type))
+            inventory_table.setItem(row, 1, QTableWidgetItem(prod_name))
+            qty_item = QTableWidgetItem(str(qty))
+            inventory_table.setItem(row, 2, qty_item)
+
+            # Determine stock status color
+            if "Customized" in prod_name:
+                color = QColor("#6c757d")
+                status = "Customizable"
+            elif qty > 15:
+                color = QColor("#28a745")
+                status = "Good"
+            elif qty >= 5:
+                color = QColor("#ffc107")
+                status = "Low"
             else:
-                item.setBackground(QColor("#dc3545")) 
-            item.setForeground(QColor("white"))
-        except (ValueError, TypeError):
+                color = QColor("#dc3545")
+                status = "Critical"
 
-            item.setBackground(QColor("white"))
-            item.setForeground(QColor("black"))
-            item.setText("") 
+            status_item = QTableWidgetItem(status)
+            status_item.setBackground(color)
+            status_item.setForeground(QColor("white"))
+            inventory_table.setItem(row, 3, status_item)
 
-    placeholder_data = [
-        ("Tote Bag", "Canvas Tote", "15"),
-        ("Backpack", "Travel Backpack", "50"),
-        ("Keychain", "Leather Keychain", "200"),
-    ]
+        inventory_table.blockSignals(False)
 
-    product_types = ["Tote Bag", "Backpack", "Purse", "Keychain"]
+    def refresh_orders():
+        print("refresh_orders called")
+        orders = getattr(main_window, "orders", []) or []
+        orders_table.setRowCount(len(orders))
+        for r, order in enumerate(orders):
+            buyer = order.get("buyer", {}) or {}
+            orders_table.setItem(r, 0, QTableWidgetItem(buyer.get("name", "")))
+            orders_table.setItem(r, 1, QTableWidgetItem(buyer.get("address", "")))
+            orders_table.setItem(r, 2, QTableWidgetItem(str(buyer.get("age", ""))))
+            orders_table.setItem(r, 3, QTableWidgetItem(order.get("product", "")))
+            orders_table.setItem(r, 4, QTableWidgetItem(str(order.get("quantity", ""))))
+            orders_table.setItem(r, 5, QTableWidgetItem(str(order.get("total", ""))))
 
-    table.setRowCount(len(placeholder_data))
-    for row, (prod_type, prod_name, quantity) in enumerate(placeholder_data):
-        combo = QComboBox()
-        combo.addItems(product_types)
-        combo.setCurrentText(prod_type)
-        table.setCellWidget(row, 0, combo)
-
-        table.setItem(row, 1, QTableWidgetItem(prod_name)) 
-        quantity_item = QTableWidgetItem(quantity)
-        table.setItem(row, 2, quantity_item)
-
-        format_quantity_cell(row, 2)
-
-    # Button Section
+    # Buttons
     button_layout = QHBoxLayout()
     button_layout.addStretch()
+
+    refresh_btn = QPushButton("Refresh")
+    refresh_btn.setStyleSheet("background: #0078d7; color: white; border-radius: 5px; padding: 5px 10px;")
+    refresh_btn.clicked.connect(lambda: refresh_stocks())
+    refresh_btn.clicked.connect(lambda: (refresh_stocks(), refresh_orders()))
 
     add_row_btn = QPushButton("Add Row")
     add_row_btn.setStyleSheet("background: #28a745; color: white; border-radius: 5px; padding: 5px 10px;")
@@ -182,43 +257,19 @@ def create_inventory_widget(main_window):
     delete_row_btn = QPushButton("Delete Selected Row")
     delete_row_btn.setStyleSheet("background: #dc3545; color: white; border-radius: 5px; padding: 5px 10px;")
 
-    table.cellChanged.connect(format_quantity_cell)
-
-
-    def add_new_row():
-        row_position = table.rowCount()
-        table.insertRow(row_position)
-
-        combo = QComboBox()
-        combo.addItems(product_types)
-        table.setCellWidget(row_position, 0, combo)
-
-        table.setItem(row_position, 2, QTableWidgetItem(""))
-
-
-    def delete_selected_row():
-        selected_row = table.currentRow()
-        if selected_row < 0:
-            QMessageBox.information(view_widget, "No Selection", "Please select a row to delete.")
-            return
-
-        reply = QMessageBox.question(view_widget, 'Delete Confirmation',
-                                     "Are you sure you want to delete this product?",
-                                     QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
-                                     QMessageBox.StandardButton.No)
-
-        if reply == QMessageBox.StandardButton.Yes:
-            table.removeRow(selected_row)
-
-    add_row_btn.clicked.connect(add_new_row)
-    delete_row_btn.clicked.connect(delete_selected_row)
-
+    button_layout.addWidget(refresh_btn)
     button_layout.addWidget(add_row_btn)
     button_layout.addWidget(delete_row_btn)
 
+    # Add widgets
+    layout.addWidget(icon_label, alignment=Qt.AlignmentFlag.AlignCenter)
     layout.addWidget(title)
-    layout.addWidget(table)
+    layout.addWidget(inventory_table)
     layout.addLayout(button_layout)
+    layout.addWidget(orders_title)
+    layout.addWidget(orders_table)
+
+
 
     logout_btn = QPushButton("Log Out")
     logout_btn.setFixedWidth(120)
@@ -233,7 +284,63 @@ def create_inventory_widget(main_window):
     logout_btn.clicked.connect(lambda: main_window.switch_view('admin'))
     layout.addWidget(logout_btn, alignment=Qt.AlignmentFlag.AlignCenter)
 
+    # Connecting/ calls
+    def add_new_row():
+        row_position = inventory_table.rowCount()
+        inventory_table.insertRow(row_position)
+        inventory_table.setItem(row_position, 0, QTableWidgetItem(""))  # type
+        inventory_table.setItem(row_position, 1, QTableWidgetItem(""))  # name
+        inventory_table.setItem(row_position, 2, QTableWidgetItem("0"))  # qty
+        inventory_table.setItem(row_position, 3, QTableWidgetItem("Unknown"))
+
+    def delete_selected_row():
+        selected_row = inventory_table.currentRow()
+        if selected_row < 0:
+            QMessageBox.information(view_widget, "No Selection", "Please select a row to delete.")
+            return
+        reply = QMessageBox.question(view_widget, 'Delete Confirmation',
+                                     "Are you sure you want to delete this product?",
+                                     QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+                                     QMessageBox.StandardButton.No)
+        if reply == QMessageBox.StandardButton.Yes:
+            prod_name_item = inventory_table.item(selected_row, 1)
+            if prod_name_item:
+
+                # If main_window.inventory_data exists, remove key
+                inv = getattr(main_window, "inventory_data", None)
+                if inv and prod_name_item.text() in inv:
+                    inv.pop(prod_name_item.text(), None)
+            inventory_table.removeRow(selected_row)
+
+    def on_table_cell_changed(row, column):
+
+        if column == 2:
+            item = inventory_table.item(row, column)
+            if item:
+                # updates the inventory
+                inv = getattr(main_window, "inventory_data", None)
+                name_item = inventory_table.item(row, 1)
+                prod_name = name_item.text() if name_item else None
+                try:
+                    qty_val = int(item.text())
+                except (ValueError, TypeError):
+                    qty_val = 0
+                if inv is not None and prod_name:
+                    inv.setdefault(prod_name, {})["quantity"] = qty_val
+                # update status
+                status_text = colorize_quantity_item(item)
+                inventory_table.setItem(row, 3, QTableWidgetItem(status_text))
+
+    #refresh_btn.clicked.connect(lambda: (refresh_stocks(), refresh_orders()))
+    add_row_btn.clicked.connect(add_new_row)
+    delete_row_btn.clicked.connect(delete_selected_row)
+    inventory_table.cellChanged.connect(on_table_cell_changed)
+
+    refresh_stocks()
+    refresh_orders()
+
     return view_widget
+
 
 def create_admin_login_widget(main_window):
     view_widget, layout = _create_base_login_widget()

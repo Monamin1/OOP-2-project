@@ -15,6 +15,27 @@ class MainWindow(QMainWindow):
         self.setWindowTitle("Login")
         self.resize(1200, 650)
 
+        self.active_user = None
+        self.orders = []
+        self.inventory_data = {
+            "CARA": {"type": "Shoulder Bag", "quantity": 10},
+            "LIA": {"type": "Shoulder Bag", "quantity": 5},
+            "QUI": {"type": "Shoulder Bag", "quantity": 8},
+            "ANA": {"type": "Shoulder Bag", "quantity": 12},
+            "HYE": {"type": "Shoulder Bag", "quantity": 15},
+            "Baby": {"type": "Shoulder Bag", "quantity": 10},
+            "BIA": {"type": "Shoulder Bag", "quantity": 10},
+            "NYA": {"type": "Sling Bag", "quantity": 10},
+            "ORA": {"type": "Sling Bag", "quantity": 10},
+            "Normal": {"type": "Tote Bag", "quantity": 10},
+            "Large": {"type": "Tote Bag", "quantity": 8},
+            "MEG": {"type": "Coin Purse", "quantity": 25},
+            "AURA": {"type": "Coin Purse", "quantity": 25},
+            "EVA": {"type": "Coin Purse", "quantity": 25},
+            "AVA": {"type": "Coin Purse", "quantity": 25},
+            "Standard": {"type": "Saddle Bag", "quantity": 5},
+}
+
         self.view_creators = {
             'startup': create_startup_splash,
             'mode_select': create_mode_select_view,
@@ -47,6 +68,8 @@ class MainWindow(QMainWindow):
                 background-color: #e0e0e0;
             }
         """)
+
+
 
     def setup_ui(self):
         # Main container widget

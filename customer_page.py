@@ -40,7 +40,7 @@ def create_customer_page(parent=None):
     desc.setStyleSheet("color: #555; font-size: 14px; margin-bottom: 10px;")
     layout.addWidget(desc)
 
-    # Scroll area to hold categories
+    # Scroll area
     scroll = QScrollArea()
     scroll.setWidgetResizable(True)
     content = QWidget()
@@ -80,9 +80,9 @@ def create_customer_page(parent=None):
     }
 
     for category, items in catalog.items():
-        section_label = QLabel(f"– {category} –")
+        section_label = QLabel(f"- {category} -")
         section_label.setStyleSheet("font-size: 20px; font-weight: bold; color: #222; margin-top: 10px;")
-        content_layout.addWidget(section_label)
+        content_layout.addWidget(section_label, alignment=Qt.AlignmentFlag.AlignCenter)
 
         for item in items:
             card = create_product_card(item)
@@ -126,7 +126,21 @@ def create_product_card(product):
     layout.addWidget(price_label, stretch=1)
 
     # Material and Name
-    name_label = QLabel(f"{product['material']}: {product['name']}")
+    main = card.parent()
+    while main and not hasattr(main, "switch_view"):
+        main = main.parent()
+
+    inv = getattr(main, "inventory_data", {}) if main else {}
+    stock_text = ""
+
+    # look up stock
+    if product["name"] in inv and "Customized" not in product["name"]:
+        stock_left = inv[product["name"]]["quantity"]
+        stock_text = f"  —  {stock_left} left"
+    else:
+        stock_text = "  —  Customizable"
+
+    name_label = QLabel(f"{product['material']}: {product['name']}{stock_text}")
     name_label.setStyleSheet("font-size: 14px; color: #333;")
     layout.addWidget(name_label, stretch=2)
 
@@ -156,16 +170,57 @@ def create_product_card(product):
     def buy_action():
         qty = qty_spin.value()
         color = color_box.currentText()
+        total = calculate_total(product['price'], qty)
+
+        main = card.parent()
+        while main and not hasattr(main, "switch_view"):
+            main = main.parent()
+
+        if not main:
+            QMessageBox.warning(card, "Error", "Cannot find main window.")
+            return
+
+        inv = getattr(main, "inventory_data", {})
+        product_name = product['name']
+
+        if product_name in inv and "Customized" not in product_name:
+            current_stock = inv[product_name]["quantity"]
+            if qty > current_stock:
+                QMessageBox.warning(
+                    card,
+                    "Insufficient Stock",
+                    f"Only {current_stock} left in stock for {product_name}!"
+                )
+                return
+            # reduce stock
+            inv[product_name]["quantity"] = max(0, current_stock - qty)
+
+        # record order
+        buyer = getattr(main, "active_user", {})
+        main.orders.append({
+            "buyer": buyer,
+            "product": product_name,
+            "category": product.get('category', 'Unknown'),
+            "quantity": qty,
+            "color": color,
+            "total": total
+        })
+        # if the stock reached 0, displays "out of stock" message
+        if product_name in inv and inv[product_name]["quantity"] == 0:
+            buy_btn.setEnabled(False)
+            buy_btn.setText("Out of Stock")
+
         QMessageBox.information(
             card,
             "Order Placed",
-            f"✅ You ordered {qty} × {product['name']}\n\n"
+            f"You ordered {qty} × {product_name}\n\n"
             f"Material: {product['material']}\n"
             f"Color: {color}\n"
             f"Price: {product['price']} php each\n\n"
-            f"Total: {calculate_total(product['price'], qty)} php"
+            f"Total: {total} php"
         )
 
+    # Connect the signal
     buy_btn.clicked.connect(buy_action)
     layout.addWidget(buy_btn)
 
