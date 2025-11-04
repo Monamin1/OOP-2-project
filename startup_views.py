@@ -85,8 +85,7 @@ def create_mode_select_view(parent=None):
 
     layout.addStretch(1)
 
-    customer_btn.clicked.connect(lambda: parent.switch_view("consumer"))
+    customer_btn.clicked.connect(lambda: parent.switch_view("customer"))
     admin_btn.clicked.connect(lambda: parent.switch_view("admin"))
 
     return widget
-

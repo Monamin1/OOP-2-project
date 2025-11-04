@@ -16,7 +16,7 @@ def _create_base_login_widget():
     layout.setContentsMargins(20, 20, 20, 20)
     return view_widget, layout
 
-def create_consumer_login_widget(parent=None):
+def create_customer_login_widget(parent=None):
     widget = QWidget(parent)
     layout = QVBoxLayout(widget)
     layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
@@ -83,7 +83,7 @@ def create_consumer_login_widget(parent=None):
 
         # Switch to customer page
         if hasattr(parent, "switch_view"):
-            parent.switch_view("customer")
+            parent.switch_view("customer_catalog")
 
     login_button.clicked.connect(handle_login)
 

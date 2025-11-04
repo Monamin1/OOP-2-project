@@ -2,21 +2,24 @@ from PyQt6.QtWidgets import QMainWindow, QWidget, QVBoxLayout
 from PyQt6.QtCore import Qt
 
 from ui_components import CollapsablePanel, create_menu_button
-from ui_views import (create_admin_login_widget, create_consumer_login_widget, create_inventory_widget,
+from ui_views import (create_admin_login_widget, create_customer_login_widget, create_inventory_widget,
                       FeedbackDialog
 )
-from customer_page import create_customer_page
+from customer_page import create_customer_page, create_cart_view
 from startup_views import create_startup_splash, create_mode_select_view
 
 
 class MainWindow(QMainWindow):
-    def __init__(self, initial_view='consumer'):
+    def __init__(self, initial_view='customer'):
         super().__init__()
         self.setWindowTitle("Login")
         self.resize(1200, 650)
 
         self.active_user = None
         self.orders = []
+        self.cart_items = []
+        self.product_card_map = {} # To store references to product cards for dynamic updates
+        self.cart_count_label = None # To store reference to the cart count label
         self.inventory_data = {
             "CARA": {"type": "Shoulder Bag", "quantity": 10},
             "LIA": {"type": "Shoulder Bag", "quantity": 5},
@@ -39,10 +42,11 @@ class MainWindow(QMainWindow):
         self.view_creators = {
             'startup': create_startup_splash,
             'mode_select': create_mode_select_view,
-            'consumer': create_consumer_login_widget,
+            'customer': create_customer_login_widget,
             'admin': create_admin_login_widget,
             'inventory': create_inventory_widget,
-            'customer': create_customer_page,
+            'customer_catalog': create_customer_page,
+            'shopping_cart': create_cart_view,
         }
 
         self.setup_ui()
@@ -98,7 +102,7 @@ class MainWindow(QMainWindow):
 
         # Collapsible Panel
         self.panel = CollapsablePanel(self)
-        self.panel.add_menu_item("Consumer", lambda: self.switch_view('consumer'))
+        self.panel.add_menu_item("Customer", lambda: self.switch_view('customer'))
         self.panel.add_menu_item("Admin", lambda: self.switch_view('admin'))
         #self.panel.add_menu_item("Inventory", lambda: self.switch_view('inventory'))
         self.panel.add_menu_item("Feedback", self.show_feedback)
@@ -125,7 +129,7 @@ class MainWindow(QMainWindow):
             new_view = self.view_creators[view_name](self)
             self.view_layout.addWidget(new_view)
 
-            if view_name in ("consumer", "admin"):
+            if view_name in ("customer", "admin"):
                 self.collapse_btn.show()
             else:
                 self.collapse_btn.hide()
@@ -139,3 +143,36 @@ class MainWindow(QMainWindow):
 
         dialog = FeedbackDialog(self)
         dialog.exec()
+
+    def update_cart_count(self):
+        """Updates the cart count label in the customer page header."""
+        if self.cart_count_label:
+            total_items = sum(item['quantity'] for item in self.cart_items)
+            self.cart_count_label.setText(f"({total_items})")
+
+    def update_product_card_display(self, product_name: str):
+        """
+        Updates the stock display and buy button state for a specific product card.
+        This method is called when stock changes (e.g., item added/removed from cart).
+        """
+        card = self.product_card_map.get(product_name)
+        if not card:
+            return
+
+        inv = self.inventory_data
+        
+        # Only update if the product is actually tracked in inventory and not 'Customized'
+        if product_name in inv and "Customized" not in product_name:
+            current_stock = inv[product_name]["quantity"]
+            new_stock_text = f"  —  {current_stock} left" if current_stock > 0 else "  —  Out of Stock"
+            
+            # Update name_label (which is an attribute of the card)
+            card.name_label.setText(f"{card.product_material}: {card.product_name}{new_stock_text}")
+            
+            # Update buy_btn state (which is an attribute of the card)
+            if current_stock == 0:
+                card.buy_btn.setEnabled(False)
+                card.buy_btn.setText("Out of Stock")
+            elif not card.buy_btn.isEnabled(): # Re-enable if stock becomes > 0
+                card.buy_btn.setEnabled(True)
+                card.buy_btn.setText("Add to Cart")
