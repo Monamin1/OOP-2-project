@@ -1,6 +1,6 @@
 from PyQt6.QtWidgets import (
     QWidget, QVBoxLayout, QLabel, QPushButton, QScrollArea, QLineEdit,
-    QGroupBox, QHBoxLayout, QSpinBox, QMessageBox, QComboBox, QCheckBox, QGridLayout, QTableWidget, QTableWidgetItem, QHeaderView
+    QGroupBox, QHBoxLayout, QSpinBox, QMessageBox, QComboBox, QCheckBox, QGridLayout, QTableWidget, QTableWidgetItem, QHeaderView, QGraphicsDropShadowEffect
 )
 from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QPixmap
@@ -148,22 +148,40 @@ def create_customer_page(parent=None):
     all_materials = set()
     
     category_checkboxes = []
-    material_checkboxes = []
+    material_checkboxes = [] # type: ignore
 
     for category, items in catalog.items():
-        section_label = QLabel(f"- {category} -")
-        section_label.setStyleSheet("font-size: 20px; font-weight: bold; color: #222; margin-top: 10px;")
-        content_layout.addWidget(section_label, alignment=Qt.AlignmentFlag.AlignCenter)
-        product_widgets.append({'widget': section_label, 'type': 'section', 'category': category})
+        # --- Category Section Widget ---
+        category_section_widget = QWidget()
+        category_section_layout = QVBoxLayout(category_section_widget)
+        category_section_layout.setContentsMargins(0, 0, 0, 0)
+        category_section_layout.setSpacing(5)
 
+        section_label = QLabel(f"{category}")
+        section_label.setStyleSheet("font-size: 20px; font-weight: bold; color: #222; margin-top: 10px;")
+        category_section_layout.addWidget(section_label, alignment=Qt.AlignmentFlag.AlignCenter)
+
+        # --- Horizontal Scroll Area for Products ---
+        h_scroll = QScrollArea()
+        h_scroll.setWidgetResizable(True)
+        h_scroll.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        h_scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
+        h_scroll.setFixedHeight(300) # Adjust height to fit cards + shadow
+
+        scroll_content = QWidget()
+        h_layout = QHBoxLayout(scroll_content)
+        h_layout.setSpacing(15)
+        
         for item in items:
-            # Pass parent (main_window) to create_product_card
             all_materials.add(item["material"])
             card = create_product_card(item, category, parent) 
-            content_layout.addWidget(card)
-            product_widgets.append({'widget': card, 'type': 'product', 'data': item})
-            # Store reference to the card in MainWindow's map
+            h_layout.addWidget(card)
             parent.product_card_map[item['name']] = card
+
+        h_scroll.setWidget(scroll_content)
+        category_section_layout.addWidget(h_scroll)
+        content_layout.addWidget(category_section_widget)
+        product_widgets.append({'widget': category_section_widget, 'type': 'section', 'category': category, 'data': items})
 
     # Initial update of cart count
     parent.update_cart_count()
@@ -215,35 +233,28 @@ def create_customer_page(parent=None):
 
         visible_product_categories = set()
 
-        # First pass: show/hide product cards and find visible categories
+        # Show/hide entire category sections
         for item in product_widgets:
-            if item['type'] == 'product':
-                product_name = item['data']['name'].lower()
-                name_match = search_text in product_name
+            is_visible = False
+            # Check if the category matches the filter
+            category_match = not checked_categories or item['category'] in checked_categories
+            if not category_match:
+                item['widget'].hide()
+                continue
 
-                # Find the category of the product
-                product_category = ""
-                for cat, prods in catalog.items():
-                    if any(p['name'] == item['data']['name'] for p in prods):
-                        product_category = cat
-                        break
+            # Check if any product within this category matches the other filters
+            for product_data in item['data']:
+                name_match = search_text in product_data['name'].lower()
+                material_match = not checked_materials or product_data['material'] in checked_materials
+                if name_match and material_match:
+                    is_visible = True
+                    visible_product_categories.add(item['category'])
+                    break # Found a matching product, so the whole section is visible
+
+            if is_visible:
                 
-                category_match = not checked_categories or product_category in checked_categories
-                material_match = not checked_materials or item['data']['material'] in checked_materials
-
-
-                if name_match and category_match and material_match:
                     item['widget'].show()
-                    visible_product_categories.add(product_category)
-                else:
-                    item['widget'].hide()
-
-        # Second pass: show/hide section labels
-        for item in product_widgets:
-            if item['type'] == 'section':
-                if item['category'] in visible_product_categories:
-                    item['widget'].show()
-                else:
+            else:
                     item['widget'].hide()
 
         # Show message if no products are visible
@@ -296,51 +307,92 @@ def create_product_card(product, category, main_window):
     card = QGroupBox()
     card.product_name = product['name']
     card.product_material = product['material']
+    card.setFixedWidth(220) # Give cards a fixed width for horizontal layout
     card.setStyleSheet("""
         QGroupBox {
-            border: 1px solid #ccc; border-radius: 8px;
-            background: #fafafa; padding: 10px;
+            border: 1px solid #e0e0e0; border-radius: 8px;
+            background: #fafafa;
+        }
+        QGroupBox:hover {
+            border-color: #0078d7;
         }
     """)
-    layout = QHBoxLayout(card)
-    layout.setContentsMargins(15, 5, 15, 5)
-    layout.setSpacing(20)
 
-    # Price
-    price_label = QLabel(f"{product['price']} php")
-    price_label.setStyleSheet("font-size: 14px; font-weight: bold; color: #222;")
-    layout.addWidget(price_label, stretch=1)
+    # Add a shadow effect for the "hovering" feel
+    shadow = QGraphicsDropShadowEffect()
+    shadow.setBlurRadius(15)
+    shadow.setXOffset(0)
+    shadow.setYOffset(2)
+    shadow.setColor(Qt.GlobalColor.gray)
+    card.setGraphicsEffect(shadow)
 
-    # Material and Name
+    card_layout = QVBoxLayout(card)
+    card_layout.setContentsMargins(10, 10, 10, 10)
+    card_layout.setSpacing(10)
+    card_layout.setAlignment(Qt.AlignmentFlag.AlignTop)
+
+    # --- Image ---
+    image_label = QLabel()
+    image_label.setFixedSize(100, 100)
+    image_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+
+    base_dir = os.path.dirname(os.path.abspath(__file__))
+    image_path = os.path.join(base_dir, "assets", f"{product['name']}.jpg")
+    pixmap = QPixmap(image_path)
+
+    if not pixmap.isNull():
+        image_label.setPixmap(pixmap.scaled(100, 100, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation))
+    else:
+        image_label.setText("Image\nNot Found")
+        image_label.setStyleSheet("""
+        QLabel {
+            background-color: #e0e0e0;
+            border: 1px dashed #cccccc;
+            border-radius: 5px;
+            color: #888888;
+        }
+        """)
+
+    card_layout.addWidget(image_label, alignment=Qt.AlignmentFlag.AlignCenter)
+
     inv = main_window.inventory_data
     stock_text = ""
-
     # look up stock
     if product["name"] in inv and "Customized" not in product["name"]:
         stock_left = inv[product["name"]]["quantity"]
         stock_text = f"  —  {stock_left} left"
-        if stock_left == 0: # Initial check for out of stock
+        if stock_left == 0:
             stock_text = "  —  Out of Stock"
     else:
         stock_text = "  —  Customizable"
-    card.name_label = QLabel(f"{product['material']}: {product['name']}{stock_text}") # Make it an attribute
-    card.name_label.setStyleSheet("font-size: 14px; color: #333;")
-    layout.addWidget(card.name_label, stretch=2)
+    card.name_label = QLabel(f"{product['material']}: {product['name']}{stock_text}")
+    card.name_label.setStyleSheet("font-size: 14px; font-weight: bold; color: #333;")
+    card.name_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+    card.name_label.setWordWrap(True)
+    card_layout.addWidget(card.name_label)
 
-    # Color selector
+    price_label = QLabel(f"{product['price']} php")
+    price_label.setStyleSheet("font-size: 14px; font-weight: bold; color: #222;")
+    price_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+    card_layout.addWidget(price_label)
+
+    # --- Color and Quantity Controls ---
+    controls_layout = QHBoxLayout()
+    controls_layout.setSpacing(10)
+
     color_box = QComboBox()
     color_box.addItems(product["colors"])
-    color_box.setFixedWidth(140)
-    layout.addWidget(color_box)
+    controls_layout.addWidget(color_box)
 
-    # Quantity selector
     qty_spin = QSpinBox()
     qty_spin.setRange(1, 99)
     qty_spin.setValue(1)
     qty_spin.setFixedWidth(60)
-    layout.addWidget(qty_spin)
+    controls_layout.addWidget(qty_spin)
+    card_layout.addLayout(controls_layout)
 
-    # Add to Cart button (make it an attribute of the card)
+    card_layout.addStretch(1) # Pushes the button to the bottom
+
     card.buy_btn = QPushButton("Add to Cart")
     card.buy_btn.setStyleSheet("""
         QPushButton {
@@ -349,7 +401,8 @@ def create_product_card(product, category, main_window):
         }
         QPushButton:hover { background: #218838; }
     """)
-    
+    card_layout.addWidget(card.buy_btn)
+
     def buy_action():
         qty = qty_spin.value()
         color = color_box.currentText()
@@ -398,7 +451,6 @@ def create_product_card(product, category, main_window):
 
     # Connect the signal
     card.buy_btn.clicked.connect(buy_action)
-    layout.addWidget(card.buy_btn)
 
     # Initial check for out of stock to disable button
     if product["name"] in inv and "Customized" not in product["name"] and inv[product["name"]]["quantity"] == 0:
