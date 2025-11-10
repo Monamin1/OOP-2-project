@@ -1,3 +1,9 @@
+import subprocess
+
+subprocess.run(["pip", "install", "PyQt6"])
+subprocess.run(["pip", "install", "dotenv"])
+
+
 import sys
 from PyQt6.QtWidgets import QApplication
 from main_window import MainWindow
