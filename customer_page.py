@@ -286,19 +286,6 @@ def create_customer_page(parent=None):
 
     cart_button.clicked.connect(lambda: parent.switch_view('shopping_cart'))
 
-    # Logout button
-    logout_btn = QPushButton("Log Out")
-    logout_btn.setFixedWidth(120)
-    logout_btn.setStyleSheet("""
-        QPushButton {
-            background: #dc3545; color: white; border: none;
-            padding: 6px 12px; border-radius: 5px;
-        }
-        QPushButton:hover { background: #b02a37; }
-    """)
-    logout_btn.clicked.connect(lambda: parent.switch_view('customer'))
-    layout.addWidget(logout_btn, alignment=Qt.AlignmentFlag.AlignCenter)
-
     return widget
 
 
