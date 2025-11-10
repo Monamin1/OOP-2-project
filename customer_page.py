@@ -6,7 +6,6 @@ from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QPixmap
 import os
 
-from color_palette import FONT_SIZE_LARGE, PRIMARY_COLOR
 
 def create_customer_page(parent=None):
     widget = QWidget(parent)
@@ -34,8 +33,7 @@ def create_customer_page(parent=None):
     #Title
     header_layout = QHBoxLayout()
     title = QLabel("👜 Product Catalog")
-    # Using centralized styling from color_palette.py
-    title.setStyleSheet(f"font-size: {FONT_SIZE_LARGE}; font-weight: bold; color: {PRIMARY_COLOR};")
+    title.setStyleSheet("font-size: 30px; font-weight: bold; color: #222;")
     header_layout.addWidget(title, stretch=1)
 
     cart_button = QPushButton()
@@ -521,9 +519,8 @@ def create_cart_view(parent=None):
 
             remove_btn = QPushButton("Remove")
             remove_btn.setStyleSheet("""
-
-                QPushButton { background: #dc3545; color: white; border: none; border-radius: 5px; padding: 6px 12px; }
-                QPushButton:hover { background: #b02a37; }
+                QPushButton { background-color: #dc3545; color: white; border-radius: 4px; padding: 4px 8px; }
+                QPushButton:hover { background-color: #c82333; }
             """)
             remove_btn.clicked.connect(create_remove_handler(item))
             cart_table.setCellWidget(row, 5, remove_btn)
