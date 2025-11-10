@@ -1,6 +1,6 @@
-from PyQt6.QtWidgets import QWidget, QVBoxLayout, QLabel, QGraphicsOpacityEffect, QPushButton
+from PyQt6.QtWidgets import QWidget, QVBoxLayout, QLabel, QGraphicsOpacityEffect, QPushButton, QGraphicsDropShadowEffect
 from PyQt6.QtCore import Qt, QPropertyAnimation, QEasingCurve, QTimer
-from PyQt6.QtGui import QPixmap, QFont
+from PyQt6.QtGui import QPixmap, QFont, QColor
 import os
 
 def create_startup_splash(parent=None):
@@ -22,7 +22,7 @@ def create_startup_splash(parent=None):
     pixmap = QPixmap(image_path)
 
     if pixmap.isNull():
-        logo.setText("⚠️ Could not load image.\n" + image_path)
+        logo.setText("Could not load image.\n" + image_path)
         logo.setStyleSheet("font-size: 16px; color: red;")
     else:
         logo.setPixmap(
@@ -57,8 +57,17 @@ def create_mode_select_view(parent=None):
     title = QLabel("Hello, select a mode: ")
     title.setAlignment(Qt.AlignmentFlag.AlignCenter)
     title.setFont(QFont("Times New Roman", 22, QFont.Weight.Normal))
-    title.setStyleSheet("color: #222;")
-    layout.addWidget(title, alignment=Qt.AlignmentFlag.AlignHCenter)
+    title.setStyleSheet("color: #222; background: transparent;")
+    title.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground, True)
+    title.setContentsMargins(0, 0, 0, 0)
+
+    shadow_effect = QGraphicsDropShadowEffect()
+    shadow_effect.setBlurRadius(30)
+    shadow_effect.setColor(QColor(50,50,50,180))
+    shadow_effect.setOffset(4, 4)
+    title.setGraphicsEffect(shadow_effect)
+
+    layout.addWidget(title, alignment=Qt.AlignmentFlag.AlignCenter)
 
     layout.addSpacing(10)
 
@@ -79,6 +88,16 @@ def create_mode_select_view(parent=None):
                 color: #888888;
             }
         """)
+
+        btn.setFlat(True)
+        btn.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground, True)
+        btn.setContentsMargins(0, 0, 0, 0)
+
+        btn_shadow = QGraphicsDropShadowEffect()
+        btn_shadow.setBlurRadius(6)
+        btn_shadow.setColor(QColor(50, 50, 50, 160))
+        btn_shadow.setOffset(3, 3)
+        btn.setGraphicsEffect(btn_shadow)
 
     layout.addWidget(customer_btn, alignment=Qt.AlignmentFlag.AlignHCenter)
     layout.addWidget(admin_btn, alignment=Qt.AlignmentFlag.AlignHCenter)

@@ -21,22 +21,22 @@ class MainWindow(QMainWindow):
         self.product_card_map = {} # To store references to product cards for dynamic updates
         self.cart_count_label = None # To store reference to the cart count label
         self.inventory_data = {
-            "CARA": {"type": "Shoulder Bag", "quantity": 10},
-            "LIA": {"type": "Shoulder Bag", "quantity": 5},
-            "QUI": {"type": "Shoulder Bag", "quantity": 8},
-            "ANA": {"type": "Shoulder Bag", "quantity": 12},
-            "HYE": {"type": "Shoulder Bag", "quantity": 15},
-            "Baby": {"type": "Shoulder Bag", "quantity": 10},
-            "BIA": {"type": "Shoulder Bag", "quantity": 10},
-            "NYA": {"type": "Sling Bag", "quantity": 10},
-            "ORA": {"type": "Sling Bag", "quantity": 10},
-            "Normal": {"type": "Tote Bag", "quantity": 10},
-            "Large": {"type": "Tote Bag", "quantity": 8},
-            "MEG": {"type": "Coin Purse", "quantity": 25},
+            "CARA": {"type": "Shoulder Bag", "quantity": 50},
+            "LIA": {"type": "Shoulder Bag", "quantity": 50},
+            "QUI": {"type": "Shoulder Bag", "quantity": 50},
+            "ANA": {"type": "Shoulder Bag", "quantity": 50},
+            "HYE": {"type": "Shoulder Bag", "quantity": 50},
+            "Baby": {"type": "Shoulder Bag", "quantity": 50},
+            "BIA": {"type": "Shoulder Bag", "quantity": 50},
+            "NYA": {"type": "Sling Bag", "quantity": 50},
+            "ORA": {"type": "Sling Bag", "quantity": 50},
+            "Normal": {"type": "Tote Bag", "quantity": 50},
+            "Large": {"type": "Tote Bag", "quantity": 50},
+            "MEG": {"type": "Coin Purse", "quantity": 50},
             "AURA": {"type": "Coin Purse", "quantity": 25},
-            "EVA": {"type": "Coin Purse", "quantity": 25},
-            "AVA": {"type": "Coin Purse", "quantity": 25},
-            "Standard": {"type": "Saddle Bag", "quantity": 5},
+            "EVA": {"type": "Coin Purse", "quantity": 50},
+            "AVA": {"type": "Coin Purse", "quantity": 50},
+            "Standard": {"type": "Saddle Bag", "quantity": 50},
 }
 
         self.view_creators = {
@@ -145,16 +145,11 @@ class MainWindow(QMainWindow):
         dialog.exec()
 
     def update_cart_count(self):
-        """Updates the cart count label in the customer page header."""
         if self.cart_count_label:
             total_items = sum(item['quantity'] for item in self.cart_items)
             self.cart_count_label.setText(f"({total_items})")
 
     def update_product_card_display(self, product_name: str):
-        """
-        Updates the stock display and buy button state for a specific product card.
-        This method is called when stock changes (e.g., item added/removed from cart).
-        """
         card = self.product_card_map.get(product_name)
         if not card:
             return

@@ -1,13 +1,16 @@
 from PyQt6.QtWidgets import (QWidget, QVBoxLayout, QLabel, QPushButton, QTableWidget, 
                              QTableWidgetItem, QHeaderView, QHBoxLayout, QComboBox, QLineEdit, 
-                             QMessageBox, QDialog, QTextEdit, QProgressBar
-)
+                             QMessageBox, QDialog, QTextEdit, QProgressBar, QGraphicsDropShadowEffect,
+                             QCheckBox)
 from PyQt6.QtCore import Qt, QThread, pyqtSignal
 from PyQt6.QtGui import QFont, QColor, QPixmap
 
-from ui_components import create_styled_line_edit
+from ui_components import create_styled_line_edit, CollapsablePanel
 from feedback_email import send_feedback_email
-import os
+from admin_auth import (get_admin_credentials, save_admin_credentials,
+                     remember_admin_login, get_remembered_admin, forget_admin_login)
+import os, json
+from persistence import save_file_state, load_file_state, get_save_files
 
 def _create_base_login_widget():
     view_widget = QWidget()
@@ -27,6 +30,14 @@ def create_customer_login_widget(parent=None):
     title.setStyleSheet("font-size: 45px; color: #000000;")
     title.setFont(QFont("Times New Roman"))
     title.setAlignment(Qt.AlignmentFlag.AlignCenter)
+    title.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground, True)
+    title.setContentsMargins(0, 0, 0, 0)
+
+    shadow_effect = QGraphicsDropShadowEffect()
+    shadow_effect.setBlurRadius(30)
+    shadow_effect.setColor(QColor(50,50,50,180))
+    shadow_effect.setOffset(4, 4)
+    title.setGraphicsEffect(shadow_effect)
 
     icon_label = QLabel()
     icon_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
@@ -72,12 +83,21 @@ def create_customer_login_widget(parent=None):
             QMessageBox.warning(widget, "Missing Info", "Please fill in all fields.")
             return
 
+        # Validate age is a reasonable positive integer
+        try:
+            age_val = int(age)
+            if age_val <= 0 or age_val > 120:
+                raise ValueError()
+        except (ValueError, TypeError):
+            QMessageBox.warning(widget, "Invalid Age", "Please enter a valid numeric age (e.g. 25).")
+            return
+
         # Store login info in main window
         if parent:
             parent.active_user = {
                 "name": name,
                 "address": address,
-                "age": age
+                "age": age_val
             }
             print("✅ Logged in user:", parent.active_user)
 
@@ -99,6 +119,15 @@ def create_inventory_widget(main_window):
     title.setAlignment(Qt.AlignmentFlag.AlignCenter)
     title.setStyleSheet("font-size: 45px; color: #000000;")
     title.setFont(QFont("Times New Roman"))
+    title.setAlignment(Qt.AlignmentFlag.AlignCenter)
+    title.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground, True)
+    title.setContentsMargins(0, 0, 0, 0)
+
+    shadow_effect = QGraphicsDropShadowEffect()
+    shadow_effect.setBlurRadius(30)
+    shadow_effect.setColor(QColor(50,50,50,180))
+    shadow_effect.setOffset(4, 4)
+    title.setGraphicsEffect(shadow_effect)
 
     icon_label = QLabel()
     icon_label.setAlignment(Qt.AlignmentFlag.AlignRight)
@@ -174,6 +203,15 @@ def create_inventory_widget(main_window):
     orders_title.setAlignment(Qt.AlignmentFlag.AlignCenter)
     orders_title.setStyleSheet("font-size: 45px; margin-top: 20px;")
     orders_title.setFont(QFont("Times New Roman"))
+    orders_title.setAlignment(Qt.AlignmentFlag.AlignCenter)
+    orders_title.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground, True)
+    orders_title.setContentsMargins(0, 0, 0, 0)
+
+    shadow_effect = QGraphicsDropShadowEffect()
+    shadow_effect.setBlurRadius(30)
+    shadow_effect.setColor(QColor(50,50,50,180))
+    shadow_effect.setOffset(4, 4)
+    orders_title.setGraphicsEffect(shadow_effect)
 
     orders_table = QTableWidget()
     orders_table.setColumnCount(6)
@@ -251,15 +289,19 @@ def create_inventory_widget(main_window):
     refresh_btn.clicked.connect(lambda: refresh_stocks())
     refresh_btn.clicked.connect(lambda: (refresh_stocks(), refresh_orders()))
 
-    add_row_btn = QPushButton("Add Row")
-    add_row_btn.setStyleSheet("background: #28a745; color: white; border-radius: 5px; padding: 5px 10px;")
+    save_btn = QPushButton("Save State")
+    save_btn.setStyleSheet("background: #28a745; color: white; border-radius: 5px; padding: 5px 10px;")
 
-    delete_row_btn = QPushButton("Delete Selected Row")
-    delete_row_btn.setStyleSheet("background: #dc3545; color: white; border-radius: 5px; padding: 5px 10px;")
+    load_btn = QPushButton("Load State")
+    load_btn.setStyleSheet("background: #6c757d; color: white; border-radius: 5px; padding: 5px 10px;")
+
+    restock_btn = QPushButton("Restock Selected")
+    restock_btn.setStyleSheet("background: #28a745; color: white; border-radius: 5px; padding: 5px 10px;")
 
     button_layout.addWidget(refresh_btn)
-    button_layout.addWidget(add_row_btn)
-    button_layout.addWidget(delete_row_btn)
+    button_layout.addWidget(save_btn)
+    button_layout.addWidget(load_btn)
+    button_layout.addWidget(restock_btn)
 
     # Add widgets
     layout.addWidget(icon_label, alignment=Qt.AlignmentFlag.AlignCenter)
@@ -271,46 +313,168 @@ def create_inventory_widget(main_window):
 
 
 
-    logout_btn = QPushButton("Log Out")
-    logout_btn.setFixedWidth(120)
-    logout_btn.setStyleSheet("""
+    class ChangeCredentialsDialog(QDialog):
+        def __init__(self, parent=None):
+            super().__init__(parent)
+            self.setWindowTitle("Change Credentials")
+            self.setFixedWidth(300)
+            
+            layout = QVBoxLayout(self)
+            layout.setSpacing(10)
+            
+            old_username = QLineEdit(self)
+            old_username.setPlaceholderText("Current Username")
+            old_password = QLineEdit(self)
+            old_password.setPlaceholderText("Current Password")
+            old_password.setEchoMode(QLineEdit.EchoMode.Password)
+            
+            new_username = QLineEdit(self)
+            new_username.setPlaceholderText("New Username")
+            new_password = QLineEdit(self)
+            new_password.setPlaceholderText("New Password")
+            new_password.setEchoMode(QLineEdit.EchoMode.Password)
+            
+            save_btn = QPushButton("Save Changes")
+            save_btn.setStyleSheet("background: #222222; color: white; border-radius: 5px; padding: 5px;")
+            
+            def save_changes():
+                credentials = get_admin_credentials()
+                if credentials.get(old_username.text()) != old_password.text():
+                    QMessageBox.warning(self, "Error", "Current credentials are incorrect")
+                    return
+                
+                if not new_username.text() or not new_password.text():
+                    QMessageBox.warning(self, "Error", "New credentials cannot be empty")
+                    return
+                
+                try:
+                    save_admin_credentials(new_username.text(), new_password.text())
+                    QMessageBox.information(self, "Success", "Credentials updated successfully")
+                    self.accept()
+                except Exception as e:
+                    QMessageBox.critical(self, "Error", f"Failed to update credentials: {str(e)}")
+            
+            save_btn.clicked.connect(save_changes)
+            
+            layout.addWidget(old_username)
+            layout.addWidget(old_password)
+            layout.addWidget(new_username)
+            layout.addWidget(new_password)
+            layout.addWidget(save_btn)
+
+    # Create settings panel
+    settings_panel = CollapsablePanel(view_widget)
+    
+    def change_credentials():
+        dialog = ChangeCredentialsDialog(view_widget)
+        if dialog.exec() == QDialog.DialogCode.Accepted:
+            main_window.switch_view('admin')
+    
+    settings_panel.add_menu_item("Change Credentials", change_credentials)
+    settings_panel.add_menu_item("Log Out", lambda: main_window.switch_view('admin'))
+
+    settings_btn = QPushButton("☰")
+    settings_btn.setFixedSize(30, 30)
+    settings_btn.setStyleSheet("""
         QPushButton {
-            background: #dc3545; color: white;
-            border: none; border-radius: 5px;
-            padding: 6px 12px;
+            background: transparent;
+            border: none;
+            font-size: 20px;
+            color: #222222;
         }
-        QPushButton:hover { background: #b02a37; }
+        QPushButton:hover {
+            color: #666666;
+        }
     """)
-    logout_btn.clicked.connect(lambda: main_window.switch_view('admin'))
-    layout.addWidget(logout_btn, alignment=Qt.AlignmentFlag.AlignCenter)
+    settings_btn.clicked.connect(settings_panel.toggle)
 
-    # Connecting/ calls
-    def add_new_row():
-        row_position = inventory_table.rowCount()
-        inventory_table.insertRow(row_position)
-        inventory_table.setItem(row_position, 0, QTableWidgetItem(""))  # type
-        inventory_table.setItem(row_position, 1, QTableWidgetItem(""))  # name
-        inventory_table.setItem(row_position, 2, QTableWidgetItem("0"))  # qty
-        inventory_table.setItem(row_position, 3, QTableWidgetItem("Unknown"))
+    # Add settings button to layout
+    title_layout = QHBoxLayout()
+    title_layout.addWidget(settings_btn)
+    title_layout.addWidget(title, alignment=Qt.AlignmentFlag.AlignCenter)
+    layout.insertLayout(1, title_layout)  # Insert after icon but before title
 
-    def delete_selected_row():
+    def restock_selected():
         selected_row = inventory_table.currentRow()
         if selected_row < 0:
-            QMessageBox.information(view_widget, "No Selection", "Please select a row to delete.")
+            QMessageBox.information(view_widget, "No Selection", "Please select a product to restock.")
             return
-        reply = QMessageBox.question(view_widget, 'Delete Confirmation',
-                                     "Are you sure you want to delete this product?",
+        
+        prod_name_item = inventory_table.item(selected_row, 1)
+        if not prod_name_item:
+            return
+        
+        reply = QMessageBox.question(view_widget, 'Restock Confirmation',
+                                     f"Are you sure you want to restock {prod_name_item.text()}?",
                                      QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
                                      QMessageBox.StandardButton.No)
+        
         if reply == QMessageBox.StandardButton.Yes:
-            prod_name_item = inventory_table.item(selected_row, 1)
-            if prod_name_item:
+            # Get default quantity for this product type
+            inv = main_window.inventory_data
+            prod_name = prod_name_item.text()
+            
+            if prod_name in inv:
+                # Restore to default quantity (50) for all product types
+                inv[prod_name]["quantity"] = 50
+                
+                # Update any product cards in the customer view
+                if hasattr(main_window, 'product_card_map'):
+                    card = main_window.product_card_map.get(prod_name)
+                    if card:
+                        if hasattr(card, 'buy_btn'):
+                            card.buy_btn.setEnabled(True)
+                            card.buy_btn.setText("Add to Cart")
+                        if hasattr(card, 'name_label'):
+                            qty = inv[prod_name]["quantity"]
+                            card.name_label.setText(f"{inv[prod_name].get('type', '')}: {prod_name} - {qty} left")
+            
+            refresh_stocks()
+            QMessageBox.information(view_widget, "Restock Complete", 
+                                  f"{prod_name} has been restocked.")
 
-                # If main_window.inventory_data exists, remove key
-                inv = getattr(main_window, "inventory_data", None)
-                if inv and prod_name_item.text() in inv:
-                    inv.pop(prod_name_item.text(), None)
-            inventory_table.removeRow(selected_row)
+    def save_current_state():
+        try:
+            filename = save_file_state(
+                main_window.inventory_data,
+                main_window.orders,
+                main_window.active_user,
+                main_window.cart_items
+            )
+            QMessageBox.information(view_widget, "Save Complete",
+                                  f"File state saved to:\n{os.path.basename(filename)}")
+        except Exception as e:
+            QMessageBox.warning(view_widget, "Save Failed",
+                              f"Could not save file state:\n{str(e)}")
+    
+    def load_saved_state():
+        try:
+            files = get_save_files()
+            if not files:
+                QMessageBox.information(view_widget, "No Saves",
+                                      "No saved files found.")
+                return
+            
+            state = load_file_state(files[0])
+            if not state:
+                QMessageBox.warning(view_widget, "Load Failed",
+                                  "Could not load the save file.")
+                return
+            
+            # Update main window state
+            main_window.inventory_data = state['inventory']
+            main_window.orders = state['orders']
+            if 'cart_items' in state:
+                main_window.cart_items = state['cart_items']
+            
+            refresh_stocks()
+            refresh_orders()
+            
+            QMessageBox.information(view_widget, "Load Complete",
+                                  "File state loaded successfully!")
+        except Exception as e:
+            QMessageBox.warning(view_widget, "Load Failed",
+                              f"Error loading file state:\n{str(e)}")
 
     def on_table_cell_changed(row, column):
 
@@ -331,9 +495,37 @@ def create_inventory_widget(main_window):
                 status_text = colorize_quantity_item(item)
                 inventory_table.setItem(row, 3, QTableWidgetItem(status_text))
 
-    #refresh_btn.clicked.connect(lambda: (refresh_stocks(), refresh_orders()))
-    add_row_btn.clicked.connect(add_new_row)
-    delete_row_btn.clicked.connect(delete_selected_row)
+    def save_current_state():
+        try:
+            filename = save_file_state(
+                main_window.inventory_data,
+                main_window.orders,
+                main_window.active_user,
+                main_window.cart_items
+            )
+            QMessageBox.information(view_widget, "Success", f"State saved successfully to:\n{filename}")
+        except Exception as e:
+            QMessageBox.critical(view_widget, "Error", f"Could not save file state:\n{str(e)}")
+
+    def load_saved_state():
+        try:
+            state = load_file_state()
+            if state:
+                main_window.inventory_data = state.get('inventory', {})
+                main_window.orders = state.get('orders', [])
+                main_window.active_user = state.get('active_user')
+                main_window.cart_items = state.get('cart_items', [])
+                refresh_stocks()
+                refresh_orders()
+                QMessageBox.information(view_widget, "Success", "State loaded successfully")
+            else:
+                QMessageBox.warning(view_widget, "No Save File", "No saved state found")
+        except Exception as e:
+            QMessageBox.critical(view_widget, "Error", f"Error loading file state:\n{str(e)}")
+
+    restock_btn.clicked.connect(restock_selected)
+    save_btn.clicked.connect(save_current_state)
+    load_btn.clicked.connect(load_saved_state)
     inventory_table.cellChanged.connect(on_table_cell_changed)
 
     refresh_stocks()
@@ -345,30 +537,83 @@ def create_inventory_widget(main_window):
 def create_admin_login_widget(main_window):
     view_widget, layout = _create_base_login_widget()
 
+    #title
     title = QLabel("Login")
     title.setAlignment(Qt.AlignmentFlag.AlignCenter)
     title.setStyleSheet("font-size: 45px; color: #000000;")
     title.setFont(QFont("Times New Roman"))
 
+    title.setAlignment(Qt.AlignmentFlag.AlignCenter)
+    title.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground, True)
+    title.setContentsMargins(0, 0, 0, 0)
+
+    shadow_effect = QGraphicsDropShadowEffect()
+    shadow_effect.setBlurRadius(30)
+    shadow_effect.setColor(QColor(50,50,50,180))
+    shadow_effect.setOffset(4, 4)
+    title.setGraphicsEffect(shadow_effect)
+
+
+    #admin_label
     admin_label = QLabel("Admin")
-    admin_label.setFixedSize(60, 30)
-    admin_label.setStyleSheet("background: #222222; border-radius: 6px; color: white")
     admin_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+    admin_label.setStyleSheet("font-size: 18px; color: #000000;")
+    admin_label.setFont(QFont("Times New Roman"))
+    admin_label.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground, True)
+    admin_label.setContentsMargins(0, 0, 0, 0)
+
+    shadow_effect = QGraphicsDropShadowEffect()
+    shadow_effect.setBlurRadius(30)
+    shadow_effect.setColor(QColor(50,50,50,180))
+    shadow_effect.setOffset(4, 4)
+    admin_label.setGraphicsEffect(shadow_effect)
+
 
     username_input = create_styled_line_edit("Username")
     password_input = create_styled_line_edit("Password")
     password_input.setEchoMode(QLineEdit.EchoMode.Password)
 
+    # Remember me checkbox
+    remember_checkbox = QCheckBox("Remember me")
+    remember_checkbox.setStyleSheet("""
+        QCheckBox {
+            color: #222222;
+        }
+        QCheckBox::indicator {
+            width: 15px;
+            height: 15px;
+        }
+        QCheckBox::indicator:unchecked {
+            border: 1px solid #222222;
+            background: white;
+        }
+        QCheckBox::indicator:checked {
+            border: 1px solid #222222;
+            background: #222222;
+        }
+    """)
+
     login_btn = QPushButton("Login")
     login_btn.setFixedSize(120, 30)
     login_btn.setStyleSheet("background: #222222; color: white; border-radius: 5px;")
 
+    # Check for remembered credentials
+    remembered = get_remembered_admin()
+    if remembered and remembered.get("username") and remembered.get("password"):
+        username_input.setText(remembered["username"])
+        password_input.setText(remembered["password"])
+        remember_checkbox.setChecked(True)
+
     def handle_admin_login():
-        credentials = {"admin123": "admin123"}
         username = username_input.text()
         password = password_input.text()
+        credentials = get_admin_credentials()
 
         if credentials.get(username) == password:
+            if remember_checkbox.isChecked():
+                remember_admin_login(username, password)
+            else:
+                forget_admin_login()
             main_window.switch_view('inventory')
         else:
             msg_box = QMessageBox(view_widget)
@@ -405,6 +650,8 @@ def create_admin_login_widget(main_window):
     layout.addWidget(password_input)
     layout.addSpacing(20)
     layout.addWidget(login_btn, alignment=Qt.AlignmentFlag.AlignCenter)
+    layout.addSpacing(20)
+    layout.addWidget(remember_checkbox, alignment=Qt.AlignmentFlag.AlignCenter)
     layout.addStretch()
 
     return view_widget

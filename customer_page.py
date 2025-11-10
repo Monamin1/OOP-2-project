@@ -1,9 +1,10 @@
 from PyQt6.QtWidgets import (
     QWidget, QVBoxLayout, QLabel, QPushButton, QScrollArea, QLineEdit,
-    QGroupBox, QHBoxLayout, QSpinBox, QMessageBox, QComboBox, QCheckBox, QGridLayout, QTableWidget, QTableWidgetItem, QHeaderView, QGraphicsDropShadowEffect
+    QGroupBox, QHBoxLayout, QSpinBox, QMessageBox, QComboBox, QCheckBox, QGridLayout, QTableWidget, QTableWidgetItem, 
+    QHeaderView, QGraphicsDropShadowEffect
 )
 from PyQt6.QtCore import Qt
-from PyQt6.QtGui import QPixmap
+from PyQt6.QtGui import QPixmap, QColor
 import os
 
 
@@ -30,16 +31,57 @@ def create_customer_page(parent=None):
         )
     layout.addWidget(icon_label, alignment=Qt.AlignmentFlag.AlignCenter)
 
-    #Title
-    header_layout = QHBoxLayout()
+    header_layout = QGridLayout()
     title = QLabel("👜 Product Catalog")
     title.setStyleSheet("font-size: 30px; font-weight: bold; color: #222;")
-    header_layout.addWidget(title, stretch=1)
+    title.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground, True)
+    title.setContentsMargins(0, 0, 0, 0)
+
+    shadow_effect = QGraphicsDropShadowEffect()
+    shadow_effect.setBlurRadius(30)
+    shadow_effect.setColor(QColor(50,50,50,180))
+    shadow_effect.setOffset(4, 4)
+    title.setGraphicsEffect(shadow_effect)
+
+    # Create menu panel for user options
+    from ui_components import CollapsablePanel
+    from feedback_email import send_feedback_email
+    menu_panel = CollapsablePanel(widget)
+    
+    def show_feedback():
+        from ui_views import FeedbackDialog
+        dialog = FeedbackDialog(widget)
+        dialog.exec()
+    
+    menu_panel.add_menu_item("Send Feedback", show_feedback)
+    menu_panel.add_menu_item("Log Out", lambda: parent.switch_view('customer'))
+
+    menu_btn = QPushButton("☰")
+    menu_btn.setFixedSize(30, 30)
+    menu_btn.setStyleSheet("""
+        QPushButton {
+            background: transparent;
+            border: none;
+            font-size: 20px;
+            color: #222222;
+        }
+        QPushButton:hover {
+            color: #666666;
+        }
+    """)
+    menu_btn.clicked.connect(menu_panel.toggle)
+    
+    # Place the title in the central column and center it, with menu button on the left
+    title.setAlignment(Qt.AlignmentFlag.AlignCenter)
+    header_layout.setColumnStretch(0, 1)
+    header_layout.setColumnStretch(1, 0)
+    header_layout.setColumnStretch(2, 1)
+    header_layout.addWidget(menu_btn, 0, 0, alignment=Qt.AlignmentFlag.AlignLeft)
+    header_layout.addWidget(title, 0, 1, alignment=Qt.AlignmentFlag.AlignCenter)
 
     cart_button = QPushButton()
     cart_button.setFlat(True)
-    cart_button.setMinimumHeight(100)
-    cart_button.setMinimumWidth(100)
+    cart_button.setFixedSize(100, 100)
     cart_button.setStyleSheet("""
         QPushButton {
             border: none;
@@ -54,7 +96,7 @@ def create_customer_page(parent=None):
     parent.cart_count_label = cart_count_label
     cart_layout.addWidget(cart_icon_label)
     cart_layout.addWidget(cart_count_label)
-    header_layout.addWidget(cart_button, alignment=Qt.AlignmentFlag.AlignRight)
+    header_layout.addWidget(cart_button, 0, 2, alignment=Qt.AlignmentFlag.AlignRight)
     layout.addLayout(header_layout)
 
     desc = QLabel("Select color and quantity for each item, then click Buy to order.")
@@ -117,11 +159,9 @@ def create_customer_page(parent=None):
     catalog = {
         "Shoulder Bag": [
             {"price": 300, "material": "Crocodile Texture", "name": "CARA", "colors": ["Blue/Pink", "Red/Blue", "Pink/Brown", "Brown/Pink", "Pink/Blue", "Tan/Beige", "Beige/Black", "Blue/Tan", "Black/Red", "Brown/Beige"]},
-            {"price": 1800, "material": "Real Leather", "name": "LIA", "colors": ["Brown", "Black", "Tan"]},
-            {"price": 1200, "material": "Real Leather", "name": "QUI", "colors": ["Black"]},
             {"price": 350, "material": "Faux Leather", "name": "ANA", "colors": ["Brown", "Taupe", "Lt. Green", "Dark Brown"]},
             {"price": 350, "material": "Faux Leather", "name": "HYE", "colors": ["Gray", "Choco Brown", "Black"]},
-            {"price": 300, "material": "Faux Leather", "name": "Baby", "colors": ["Brown"]},
+            {"price": 300, "material": "Faux Leather", "name": "BABY", "colors": ["Brown"]},
             {"price": 280, "material": "Faux Leather", "name": "BIA", "colors": ["Lt. Green"]},
         ],
         "Sling Bag": [
@@ -129,8 +169,8 @@ def create_customer_page(parent=None):
             {"price": 680, "material": "Leather", "name": "ORA", "colors": ["Tan", "Black"]},
         ],
         "Tote Bag": [
-            {"price": 1200, "material": "Real Leather", "name": "Normal", "colors": ["Standard"]},
-            {"price": 1800, "material": "Real Leather", "name": "Large", "colors": ["Standard"]},
+            {"price": 1200, "material": "Real Leather", "name": "QUI", "colors": ["Black"]},
+            {"price": 1800, "material": "Real Leather", "name": "LIA", "colors": ["Brown", "Black", "Tan"]},
         ],
         "Coin Purse": [
             {"price": 70, "material": "Faux Leather", "name": "MEG", "colors": ["Brown", "Mocca", "Red", "Tan", "R. Blue", "D. Brown"]},
@@ -139,8 +179,8 @@ def create_customer_page(parent=None):
             {"price": 50, "material": "Faux Leather", "name": "AVA", "colors": ["Brown", "Tan", "Red", "Black", "Old Rose", "Mocca", "Taupe", "Beige", "Gray", "Blue", "Lt. Green"]},
         ],
         "Saddle Bag": [
-            {"price": "1800", "material": "Faux Leather", "name": "Standard", "colors": ["Standard"]},
-            {"price": "5500 - 6000", "material": "Leather", "name": "Customized", "colors": ["Customizable"]},
+            {"price": "1800", "material": "Faux Leather", "name": "STANDARD", "colors": ["Standard"]},
+            {"price": "5500 - 6000", "material": "Leather", "name": "CUSTOMIZED", "colors": ["Customizable"]},
         ],
     }
 
@@ -148,7 +188,7 @@ def create_customer_page(parent=None):
     all_materials = set()
     
     category_checkboxes = []
-    material_checkboxes = [] # type: ignore
+    material_checkboxes = []
 
     for category, items in catalog.items():
         # --- Category Section Widget ---
@@ -233,31 +273,33 @@ def create_customer_page(parent=None):
 
         visible_product_categories = set()
 
-        # Show/hide entire category sections
         for item in product_widgets:
             is_visible = False
-            # Check if the category matches the filter
-            category_match = not checked_categories or item['category'] in checked_categories
-            if not category_match:
+            category_name = (item.get('category') or '').lower()
+
+            category_filter_ok = not checked_categories or item['category'] in checked_categories
+            if not category_filter_ok:
                 item['widget'].hide()
                 continue
 
-            # Check if any product within this category matches the other filters
-            for product_data in item['data']:
-                name_match = search_text in product_data['name'].lower()
-                material_match = not checked_materials or product_data['material'] in checked_materials
-                if name_match and material_match:
-                    is_visible = True
-                    visible_product_categories.add(item['category'])
-                    break # Found a matching product, so the whole section is visible
+            if search_text and search_text in category_name:
+                is_visible = True
+                visible_product_categories.add(item['category'])
+            else:
+
+                for product_data in item['data']:
+                    name_match = search_text in product_data['name'].lower() if search_text else True
+                    material_match = not checked_materials or product_data['material'] in checked_materials
+                    if name_match and material_match:
+                        is_visible = True
+                        visible_product_categories.add(item['category'])
+                        break
 
             if is_visible:
-                
-                    item['widget'].show()
+                item['widget'].show()
             else:
-                    item['widget'].hide()
+                item['widget'].hide()
 
-        # Show message if no products are visible
         if not visible_product_categories:
             no_results_label.show()
         else:
@@ -272,8 +314,8 @@ def create_customer_page(parent=None):
         cb.stateChanged.connect(update_product_view)
     
     def clear_checkbox_filters():
-        # Block signals to prevent multiple updates
-        for cb in category_checkboxes + material_checkboxes: # type: ignore
+
+        for cb in category_checkboxes + material_checkboxes:
             cb.blockSignals(True)
 
         for cb in category_checkboxes + material_checkboxes:
@@ -281,7 +323,7 @@ def create_customer_page(parent=None):
 
         for cb in category_checkboxes + material_checkboxes:
             cb.blockSignals(False)
-        update_product_view() # type: ignore
+        update_product_view()
     clear_filters_btn.clicked.connect(clear_checkbox_filters)
 
     cart_button.clicked.connect(lambda: parent.switch_view('shopping_cart'))
@@ -290,11 +332,11 @@ def create_customer_page(parent=None):
 
 
 def create_product_card(product, category, main_window):
-    # Store product details on the card for easy access in update_product_card_display
+
     card = QGroupBox()
     card.product_name = product['name']
     card.product_material = product['material']
-    card.setFixedWidth(220) # Give cards a fixed width for horizontal layout
+    card.setFixedWidth(220)
     card.setStyleSheet("""
         QGroupBox {
             border: 1px solid #e0e0e0; border-radius: 8px;
@@ -305,7 +347,6 @@ def create_product_card(product, category, main_window):
         }
     """)
 
-    # Add a shadow effect for the "hovering" feel
     shadow = QGraphicsDropShadowEffect()
     shadow.setBlurRadius(15)
     shadow.setXOffset(0)
@@ -324,12 +365,26 @@ def create_product_card(product, category, main_window):
     image_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
     base_dir = os.path.dirname(os.path.abspath(__file__))
-    image_path = os.path.join(base_dir, "assets", f"{product['name']}.jpg")
-    pixmap = QPixmap(image_path)
+    base_dir = os.path.dirname(os.path.abspath(__file__))
+
+    def find_image(name):
+        variants = [name, name.lower(), name.upper(), name.title()]
+        exts = ['.jpg', '.png', '.jpeg']
+        for v in variants:
+            for e in exts:
+                p = os.path.join(base_dir, 'assets', f"{v}{e}")
+                if os.path.exists(p):
+                    return p
+        return None
+
+    image_path = find_image(product['name'])
+    pixmap = QPixmap(image_path) if image_path else QPixmap()
 
     if not pixmap.isNull():
         image_label.setPixmap(pixmap.scaled(100, 100, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation))
     else:
+        # helpful debug code for errors
+        print(f"[WARN] Image not found for product '{product['name']}' — looked for variants and extensions in assets/")
         image_label.setText("Image\nNot Found")
         image_label.setStyleSheet("""
         QLabel {
@@ -378,7 +433,7 @@ def create_product_card(product, category, main_window):
     controls_layout.addWidget(qty_spin)
     card_layout.addLayout(controls_layout)
 
-    card_layout.addStretch(1) # Pushes the button to the bottom
+    card_layout.addStretch(1)
 
     card.buy_btn = QPushButton("Add to Cart")
     card.buy_btn.setStyleSheet("""
@@ -487,7 +542,6 @@ def create_cart_view(parent=None):
     layout.addWidget(total_price_label)
 
     def refresh_cart_table():
-        """Clears and repopulates the cart table with current cart items."""
         cart_table.setRowCount(0) # Clear the table
         cart_items = getattr(parent, 'cart_items', [])
         cart_table.setRowCount(len(cart_items))
@@ -539,10 +593,10 @@ def create_cart_view(parent=None):
 
         return handler
 
-    # --- Populate Table ---
-    refresh_cart_table() # Initial population of the table
+    # Populate Table
+    refresh_cart_table()
 
-    # --- Action Buttons ---
+    #Action Buttons
     button_layout = QHBoxLayout()
     button_layout.addStretch()
 

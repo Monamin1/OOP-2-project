@@ -1,0 +1,19 @@
+{
+  "inventory": {
+    "item1": 10,
+    "item2": 20
+  },
+  "orders": [
+    {
+      "id": 1,
+      "items": [
+        "item1"
+      ]
+    }
+  ],
+  "active_user": "test_user",
+  "cart_items": [
+    "item2"
+  ],
+  "saved_at": "20251110_181626"
+}
