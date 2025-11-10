@@ -2,7 +2,6 @@ import json
 import os
 
 def get_admin_credentials():
-    """Get admin credentials from config file or return default"""
     config_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 
                              'config', 'credentials.json')
     try:
@@ -14,7 +13,6 @@ def get_admin_credentials():
     return {"admin123": "admin123"}
 
 def save_admin_credentials(username, password):
-    """Save admin credentials to config file"""
     config_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 
                              'config', 'credentials.json')
     os.makedirs(os.path.dirname(config_path), exist_ok=True)
@@ -24,7 +22,6 @@ def save_admin_credentials(username, password):
         json.dump(creds, f, indent=2)
 
 def remember_admin_login(username, password):
-    """Save remembered admin username and password"""
     config_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 
                              'config', 'remember.json')
     os.makedirs(os.path.dirname(config_path), exist_ok=True)
@@ -36,7 +33,6 @@ def remember_admin_login(username, password):
         }, f)
 
 def get_remembered_admin():
-    """Get remembered admin credentials if any"""
     config_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 
                              'config', 'remember.json')
     try:
@@ -52,7 +48,6 @@ def get_remembered_admin():
     return None
 
 def forget_admin_login():
-    """Clear remembered admin username"""
     config_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 
                              'config', 'remember.json')
     if os.path.exists(config_path):

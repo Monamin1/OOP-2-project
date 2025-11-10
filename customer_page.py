@@ -6,6 +6,9 @@ from PyQt6.QtWidgets import (
 from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QPixmap, QColor
 import os
+from ui_views import FeedbackDialog
+from ui_components import CollapsablePanel
+from feedback_email import send_feedback_email
 
 
 def create_customer_page(parent=None):
@@ -43,17 +46,13 @@ def create_customer_page(parent=None):
     shadow_effect.setOffset(4, 4)
     title.setGraphicsEffect(shadow_effect)
 
-    # Create menu panel for user options
-    from ui_components import CollapsablePanel
-    from feedback_email import send_feedback_email
     menu_panel = CollapsablePanel(widget)
     
     def show_feedback():
-        from ui_views import FeedbackDialog
         dialog = FeedbackDialog(widget)
         dialog.exec()
     
-    menu_panel.add_menu_item("Send Feedback", show_feedback)
+    menu_panel.add_menu_item("Feedback", show_feedback)
     menu_panel.add_menu_item("Log Out", lambda: parent.switch_view('customer'))
 
     menu_btn = QPushButton("☰")
@@ -92,11 +91,14 @@ def create_customer_page(parent=None):
     cart_icon_label = QLabel("🛒")
     cart_icon_label.setStyleSheet("font-size: 30px;")
     cart_count_label = QLabel("(0)")
-    cart_count_label.setStyleSheet("font-size: 25px; font-weight: bold;")
+    cart_count_label.setStyleSheet("""
+        font-size: 25px;
+        font-weight: bold;
+    """)
     parent.cart_count_label = cart_count_label
     cart_layout.addWidget(cart_icon_label)
     cart_layout.addWidget(cart_count_label)
-    header_layout.addWidget(cart_button, 0, 2, alignment=Qt.AlignmentFlag.AlignRight)
+    header_layout.addWidget(cart_button, 0, 2, alignment=Qt.AlignmentFlag.AlignCenter)
     layout.addLayout(header_layout)
 
     desc = QLabel("Select color and quantity for each item, then click Buy to order.")
@@ -108,7 +110,7 @@ def create_customer_page(parent=None):
     top_filter_layout = QHBoxLayout()
 
     search_bar = QLineEdit()
-    search_bar.setPlaceholderText("Search by product name...")
+    search_bar.setPlaceholderText("Search by category (e.g. Shoulder Bag)...")
     search_bar.setStyleSheet("padding: 5px; border: 1px solid #ccc; border-radius: 5px;")
     top_filter_layout.addWidget(search_bar)
 
@@ -289,7 +291,7 @@ def create_customer_page(parent=None):
 
                 for product_data in item['data']:
                     name_match = search_text in product_data['name'].lower() if search_text else True
-                    material_match = not checked_materials or product_data['material'] in checked_materials
+                    material_match = not checked_materials or any(product_data['material'] == mat for mat in checked_materials)
                     if name_match and material_match:
                         is_visible = True
                         visible_product_categories.add(item['category'])
@@ -427,8 +429,9 @@ def create_product_card(product, category, main_window):
     controls_layout.addWidget(color_box)
 
     qty_spin = QSpinBox()
-    qty_spin.setRange(1, 99)
+    qty_spin.setRange(1, 99)  # Minimum is 1, can't order 0
     qty_spin.setValue(1)
+    qty_spin.setMinimum(1)  # Double ensure minimum is 1
     qty_spin.setFixedWidth(60)
     controls_layout.addWidget(qty_spin)
     card_layout.addLayout(controls_layout)
@@ -467,16 +470,25 @@ def create_product_card(product, category, main_window):
             # Update the product card's display immediately
             main_window.update_product_card_display(product_name)
 
-        # Record order (add to cart)
-        main_window.cart_items.append({ # type: ignore
-            "buyer": main_window.active_user,
-            "product": product_name,
-            "category": category,
-            "quantity": qty,
-            "color": color,
-            "price": product['price'],
-            "total": total
-        })
+        # Stack cart items if same product/category/material/color
+        stacked = False
+        for item in main_window.cart_items:
+            if (item["product"] == product_name and item["category"] == category and item["material"] == product["material"] and item["color"] == color):
+                item["quantity"] += qty
+                item["total"] = calculate_total(product['price'], item["quantity"])
+                stacked = True
+                break
+        if not stacked:
+            main_window.cart_items.append({
+                "buyer": main_window.active_user,
+                "product": product_name,
+                "category": category,
+                "material": product["material"],
+                "quantity": qty,
+                "color": color,
+                "price": product['price'],
+                "total": total
+            })
 
         # Update the cart count display
         main_window.update_cart_count()
@@ -552,11 +564,21 @@ def create_cart_view(parent=None):
             if isinstance(subtotal, (int, float)):
                 grand_total += subtotal
 
-            cart_table.setItem(row, 0, QTableWidgetItem(item.get('product', '')))
-            cart_table.setItem(row, 1, QTableWidgetItem(item.get('color', '')))
-            cart_table.setItem(row, 2, QTableWidgetItem(str(item.get('quantity', ''))))
-            cart_table.setItem(row, 3, QTableWidgetItem(str(item.get('price', ''))))
-            cart_table.setItem(row, 4, QTableWidgetItem(str(subtotal)))
+            it0 = QTableWidgetItem(item.get('product', ''))
+            it1 = QTableWidgetItem(item.get('color', ''))
+            it2 = QTableWidgetItem(str(item.get('quantity', '')))
+            it3 = QTableWidgetItem(str(item.get('price', '')))
+            it4 = QTableWidgetItem(str(subtotal))
+            for it in (it0, it1, it2, it3, it4):
+                try:
+                    it.setFlags(it.flags() & ~Qt.ItemFlag.ItemIsEditable)
+                except Exception:
+                    pass
+            cart_table.setItem(row, 0, it0)
+            cart_table.setItem(row, 1, it1)
+            cart_table.setItem(row, 2, it2)
+            cart_table.setItem(row, 3, it3)
+            cart_table.setItem(row, 4, it4)
 
             remove_btn = QPushButton("Remove")
             remove_btn.setStyleSheet("""

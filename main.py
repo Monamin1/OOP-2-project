@@ -1,7 +1,9 @@
+import sys
 import subprocess
 
-subprocess.run(["pip", "install", "PyQt6"])
-subprocess.run(["pip", "install", "dotenv"])
+subprocess.run([sys.executable, "-m", "pip", "install", "PyQt6"])
+subprocess.run([sys.executable, "-m", "pip", "install", "dotenv"])
+
 
 
 import sys

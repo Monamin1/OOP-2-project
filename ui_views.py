@@ -12,6 +12,27 @@ from admin_auth import (get_admin_credentials, save_admin_credentials,
 import os, json
 from persistence import save_file_state, load_file_state, get_save_files
 
+def create_password_toggle_button(password_input):
+    toggle_btn = QPushButton("⊙")  # Eye icon
+    toggle_btn.setFixedWidth(40)
+    toggle_btn.setStyleSheet("""
+        QPushButton {
+            background: transparent; color: #222; border: none; border-radius: 3px;
+        }
+        QPushButton:hover { background: #e0e0e0; }
+    """)
+    
+    def toggle_password_visibility():
+        if password_input.echoMode() == QLineEdit.EchoMode.Password:
+            password_input.setEchoMode(QLineEdit.EchoMode.Normal)
+            toggle_btn.setText("–")  # Closed eye
+        else:
+            password_input.setEchoMode(QLineEdit.EchoMode.Password)
+            toggle_btn.setText("⊙")  # Open eye
+    
+    toggle_btn.clicked.connect(toggle_password_visibility)
+    return toggle_btn
+
 def _create_base_login_widget():
     view_widget = QWidget()
     layout = QVBoxLayout(view_widget)
@@ -73,6 +94,10 @@ def create_customer_login_widget(parent=None):
     login_button.setFixedSize(120, 30)
     login_button.setStyleSheet("background: #222222; color: white; border-radius: 5px;")
     layout.addWidget(login_button, alignment=Qt.AlignmentFlag.AlignCenter)
+    
+    # Connect Enter key to trigger login for all input fields
+    for input_field in (name_input, address_input, age_input):
+        input_field.returnPressed.connect(login_button.click)
 
     def handle_login():
         name = name_input.text().strip()
@@ -83,7 +108,6 @@ def create_customer_login_widget(parent=None):
             QMessageBox.warning(widget, "Missing Info", "Please fill in all fields.")
             return
 
-        # Validate age is a reasonable positive integer
         try:
             age_val = int(age)
             if age_val <= 0 or age_val > 120:
@@ -99,7 +123,7 @@ def create_customer_login_widget(parent=None):
                 "address": address,
                 "age": age_val
             }
-            print("✅ Logged in user:", parent.active_user)
+            print("Logged in user:", parent.active_user)
 
         # Switch to customer page
         if hasattr(parent, "switch_view"):
@@ -139,8 +163,8 @@ def create_inventory_widget(main_window):
     if not pixmap.isNull():
         icon_label.setPixmap(
             pixmap.scaled(80, 80,
-                        Qt.AspectRatioMode.KeepAspectRatio,
-                        Qt.TransformationMode.SmoothTransformation)
+                          Qt.AspectRatioMode.KeepAspectRatio,
+                          Qt.TransformationMode.SmoothTransformation)
         )
 
     #inventory table
@@ -167,6 +191,11 @@ def create_inventory_widget(main_window):
             gridline-color: #e0e0e0;
             selection-background-color: #0078d7;
             selection-color: white;
+            /* Hovered item highlight */
+            selection-padding: 2px;
+        }
+        QTableWidget::item:hover {
+            background: #e6f7ff;
         }
         QHeaderView::section {
             background-color: #f0f0f0;
@@ -218,6 +247,10 @@ def create_inventory_widget(main_window):
     orders_table.setHorizontalHeaderLabels(["Buyer", "Address", "Age", "Product", "Quantity", "Total"])
     orders_header = orders_table.horizontalHeader()
     orders_header.setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
+    # Make orders table read-only and behave like inventory table
+    orders_table.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)
+    orders_table.setSelectionBehavior(QTableWidget.SelectionBehavior.SelectRows)
+    orders_table.setSelectionMode(QTableWidget.SelectionMode.SingleSelection)
     orders_table.setStyleSheet("""
         QTableWidget {
             background-color: #ffffff;
@@ -263,6 +296,12 @@ def create_inventory_widget(main_window):
             status_item = QTableWidgetItem(status)
             status_item.setBackground(color)
             status_item.setForeground(QColor("white"))
+            # Prevent status cell from being selected so its colors don't get overridden
+            try:
+                status_item.setFlags(status_item.flags() & ~Qt.ItemFlag.ItemIsSelectable)
+            except Exception:
+                # Fallback for PyQt versions where ItemFlag bitwise ops differ
+                pass
             inventory_table.setItem(row, 3, status_item)
 
         inventory_table.blockSignals(False)
@@ -273,12 +312,24 @@ def create_inventory_widget(main_window):
         orders_table.setRowCount(len(orders))
         for r, order in enumerate(orders):
             buyer = order.get("buyer", {}) or {}
-            orders_table.setItem(r, 0, QTableWidgetItem(buyer.get("name", "")))
-            orders_table.setItem(r, 1, QTableWidgetItem(buyer.get("address", "")))
-            orders_table.setItem(r, 2, QTableWidgetItem(str(buyer.get("age", ""))))
-            orders_table.setItem(r, 3, QTableWidgetItem(order.get("product", "")))
-            orders_table.setItem(r, 4, QTableWidgetItem(str(order.get("quantity", ""))))
-            orders_table.setItem(r, 5, QTableWidgetItem(str(order.get("total", ""))))
+            it0 = QTableWidgetItem(buyer.get("name", ""))
+            it1 = QTableWidgetItem(buyer.get("address", ""))
+            it2 = QTableWidgetItem(str(buyer.get("age", "")))
+            it3 = QTableWidgetItem(order.get("product", ""))
+            it4 = QTableWidgetItem(str(order.get("quantity", "")))
+            it5 = QTableWidgetItem(str(order.get("total", "")))
+            # Make order cells non-editable
+            for it in (it0, it1, it2, it3, it4, it5):
+                try:
+                    it.setFlags(it.flags() & ~Qt.ItemFlag.ItemIsEditable)
+                except Exception:
+                    pass
+            orders_table.setItem(r, 0, it0)
+            orders_table.setItem(r, 1, it1)
+            orders_table.setItem(r, 2, it2)
+            orders_table.setItem(r, 3, it3)
+            orders_table.setItem(r, 4, it4)
+            orders_table.setItem(r, 5, it5)
 
     # Buttons
     button_layout = QHBoxLayout()
@@ -317,7 +368,7 @@ def create_inventory_widget(main_window):
         def __init__(self, parent=None):
             super().__init__(parent)
             self.setWindowTitle("Change Credentials")
-            self.setFixedWidth(300)
+            self.setFixedWidth(350)
             
             layout = QVBoxLayout(self)
             layout.setSpacing(10)
@@ -328,11 +379,23 @@ def create_inventory_widget(main_window):
             old_password.setPlaceholderText("Current Password")
             old_password.setEchoMode(QLineEdit.EchoMode.Password)
             
+            # Add toggle button for old password
+            old_password_toggle = create_password_toggle_button(old_password)
+            old_password_layout = QHBoxLayout()
+            old_password_layout.addWidget(old_password)
+            old_password_layout.addWidget(old_password_toggle)
+            
             new_username = QLineEdit(self)
             new_username.setPlaceholderText("New Username")
             new_password = QLineEdit(self)
             new_password.setPlaceholderText("New Password")
             new_password.setEchoMode(QLineEdit.EchoMode.Password)
+            
+            # Add toggle button for new password
+            new_password_toggle = create_password_toggle_button(new_password)
+            new_password_layout = QHBoxLayout()
+            new_password_layout.addWidget(new_password)
+            new_password_layout.addWidget(new_password_toggle)
             
             save_btn = QPushButton("Save Changes")
             save_btn.setStyleSheet("background: #222222; color: white; border-radius: 5px; padding: 5px;")
@@ -347,6 +410,11 @@ def create_inventory_widget(main_window):
                     QMessageBox.warning(self, "Error", "New credentials cannot be empty")
                     return
                 
+                # Check if old and new credentials are the same
+                if old_username.text() == new_username.text() and old_password.text() == new_password.text():
+                    QMessageBox.warning(self, "Error", "New credentials cannot be the same as old credentials")
+                    return
+                
                 try:
                     save_admin_credentials(new_username.text(), new_password.text())
                     QMessageBox.information(self, "Success", "Credentials updated successfully")
@@ -357,9 +425,9 @@ def create_inventory_widget(main_window):
             save_btn.clicked.connect(save_changes)
             
             layout.addWidget(old_username)
-            layout.addWidget(old_password)
+            layout.addLayout(old_password_layout)
             layout.addWidget(new_username)
-            layout.addWidget(new_password)
+            layout.addLayout(new_password_layout)
             layout.addWidget(save_btn)
 
     # Create settings panel
@@ -413,11 +481,18 @@ def create_inventory_widget(main_window):
             # Get default quantity for this product type
             inv = main_window.inventory_data
             prod_name = prod_name_item.text()
-            
+
             if prod_name in inv:
+                # Default max quantity for restock
+                max_stock = 50
+                current_stock = int(inv[prod_name].get("quantity", 0))
+                if current_stock >= max_stock:
+                    QMessageBox.information(view_widget, "Already Full", f"{prod_name} is already at full stock.")
+                    return
+
                 # Restore to default quantity (50) for all product types
-                inv[prod_name]["quantity"] = 50
-                
+                inv[prod_name]["quantity"] = max_stock
+
                 # Update any product cards in the customer view
                 if hasattr(main_window, 'product_card_map'):
                     card = main_window.product_card_map.get(prod_name)
@@ -428,7 +503,7 @@ def create_inventory_widget(main_window):
                         if hasattr(card, 'name_label'):
                             qty = inv[prod_name]["quantity"]
                             card.name_label.setText(f"{inv[prod_name].get('type', '')}: {prod_name} - {qty} left")
-            
+
             refresh_stocks()
             QMessageBox.information(view_widget, "Restock Complete", 
                                   f"{prod_name} has been restocked.")
@@ -572,6 +647,12 @@ def create_admin_login_widget(main_window):
     username_input = create_styled_line_edit("Username")
     password_input = create_styled_line_edit("Password")
     password_input.setEchoMode(QLineEdit.EchoMode.Password)
+    
+    # Create password toggle button and layout
+    password_toggle_btn = create_password_toggle_button(password_input)
+    password_layout = QHBoxLayout()
+    password_layout.addWidget(password_input)
+    password_layout.addWidget(password_toggle_btn)
 
     # Remember me checkbox
     remember_checkbox = QCheckBox("Remember me")
@@ -596,6 +677,10 @@ def create_admin_login_widget(main_window):
     login_btn = QPushButton("Login")
     login_btn.setFixedSize(120, 30)
     login_btn.setStyleSheet("background: #222222; color: white; border-radius: 5px;")
+    
+    # Connect Enter key to trigger login for username and password fields
+    username_input.returnPressed.connect(login_btn.click)
+    password_input.returnPressed.connect(login_btn.click)
 
     # Check for remembered credentials
     remembered = get_remembered_admin()
@@ -647,7 +732,7 @@ def create_admin_login_widget(main_window):
     layout.addWidget(admin_label, alignment=Qt.AlignmentFlag.AlignCenter)
     layout.addSpacing(20)
     layout.addWidget(username_input)
-    layout.addWidget(password_input)
+    layout.addLayout(password_layout)  # Use the layout with toggle button
     layout.addSpacing(20)
     layout.addWidget(login_btn, alignment=Qt.AlignmentFlag.AlignCenter)
     layout.addSpacing(20)

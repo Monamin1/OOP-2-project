@@ -18,8 +18,8 @@ class MainWindow(QMainWindow):
         self.active_user = None
         self.orders = []
         self.cart_items = []
-        self.product_card_map = {} # To store references to product cards for dynamic updates
-        self.cart_count_label = None # To store reference to the cart count label
+        self.product_card_map = {}
+        self.cart_count_label = None
         self.inventory_data = {
             "CARA": {"type": "Shoulder Bag", "quantity": 50},
             "LIA": {"type": "Shoulder Bag", "quantity": 50},
@@ -147,7 +147,8 @@ class MainWindow(QMainWindow):
     def update_cart_count(self):
         if self.cart_count_label:
             total_items = sum(item['quantity'] for item in self.cart_items)
-            self.cart_count_label.setText(f"({total_items})")
+            # Ensure the format is consistent with fixed-width space
+            self.cart_count_label.setText(f"({total_items} )")
 
     def update_product_card_display(self, product_name: str):
         card = self.product_card_map.get(product_name)
