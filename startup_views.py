@@ -2,6 +2,7 @@ from PyQt6.QtWidgets import QWidget, QVBoxLayout, QLabel, QGraphicsOpacityEffect
 from PyQt6.QtCore import Qt, QPropertyAnimation, QEasingCurve, QTimer
 from PyQt6.QtGui import QPixmap, QFont
 import os
+from color_palette import WHITE_COLOR
 
 def create_startup_splash(parent=None):
 
@@ -10,7 +11,7 @@ def create_startup_splash(parent=None):
     layout = QVBoxLayout(widget)
     layout.addSpacing(100)
     layout.setAlignment(Qt.AlignmentFlag.AlignRight)
-    widget.setStyleSheet("background-color: white;")
+    widget.setStyleSheet(f"background-color: {WHITE_COLOR};")
 
     logo = QLabel()
     logo.setAlignment(Qt.AlignmentFlag.AlignCenter)

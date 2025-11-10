@@ -7,6 +7,7 @@ from ui_views import (create_admin_login_widget, create_customer_login_widget, c
 )
 from customer_page import create_customer_page, create_cart_view
 from startup_views import create_startup_splash, create_mode_select_view
+from color_palette import get_app_style
 
 
 class MainWindow(QMainWindow):
@@ -51,27 +52,8 @@ class MainWindow(QMainWindow):
 
         self.setup_ui()
         self.switch_view(initial_view)
-        self.setStyleSheet("""
-            QWidget {
-                background-color: #ffffff;
-                color: #000000;
-            }
-            QLineEdit, QTextEdit {
-                background-color: #ffffff;
-                color: #000000;
-                border: 1px solid #cccccc;
-            }
-            QPushButton {
-                color: #000000;
-                background-color: #f7f7f7;
-                border: 1px solid #cccccc;
-                border-radius: 4px;
-                padding: 4px 8px;
-            }
-            QPushButton:hover {
-                background-color: #e0e0e0;
-            }
-        """)
+        # Using centralized styling from color_palette.py
+        self.setStyleSheet(get_app_style())
 
 
 
@@ -145,31 +127,27 @@ class MainWindow(QMainWindow):
         dialog.exec()
 
     def update_cart_count(self):
-        """Updates the cart count label in the customer page header."""
         if self.cart_count_label:
             total_items = sum(item['quantity'] for item in self.cart_items)
             self.cart_count_label.setText(f"({total_items})")
 
     def update_product_card_display(self, product_name: str):
-        """
-        Updates the stock display and buy button state for a specific product card.
-        This method is called when stock changes (e.g., item added/removed from cart).
-        """
+        #item added/removed from cart
+
         card = self.product_card_map.get(product_name)
         if not card:
             return
 
         inv = self.inventory_data
         
-        # Only update if the product is actually tracked in inventory and not 'Customized'
         if product_name in inv and "Customized" not in product_name:
             current_stock = inv[product_name]["quantity"]
             new_stock_text = f"  —  {current_stock} left" if current_stock > 0 else "  —  Out of Stock"
             
-            # Update name_label (which is an attribute of the card)
+            # Update name_label
             card.name_label.setText(f"{card.product_material}: {card.product_name}{new_stock_text}")
             
-            # Update buy_btn state (which is an attribute of the card)
+            # Update buy_btn state
             if current_stock == 0:
                 card.buy_btn.setEnabled(False)
                 card.buy_btn.setText("Out of Stock")

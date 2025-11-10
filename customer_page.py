@@ -6,6 +6,7 @@ from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QPixmap
 import os
 
+from color_palette import FONT_SIZE_LARGE, PRIMARY_COLOR
 
 def create_customer_page(parent=None):
     widget = QWidget(parent)
@@ -30,10 +31,11 @@ def create_customer_page(parent=None):
         )
     layout.addWidget(icon_label, alignment=Qt.AlignmentFlag.AlignCenter)
 
-    # --- Title and Cart Icon ---
+    #Title
     header_layout = QHBoxLayout()
     title = QLabel("👜 Product Catalog")
-    title.setStyleSheet("font-size: 30px; font-weight: bold; color: #222;")
+    # Using centralized styling from color_palette.py
+    title.setStyleSheet(f"font-size: {FONT_SIZE_LARGE}; font-weight: bold; color: {PRIMARY_COLOR};")
     header_layout.addWidget(title, stretch=1)
 
     cart_button = QPushButton()
@@ -62,7 +64,7 @@ def create_customer_page(parent=None):
     desc.setStyleSheet("color: #555; font-size: 14px; margin-bottom: 10px;")
     layout.addWidget(desc)
 
-    # --- Filter Controls ---
+    #filter control
     top_filter_layout = QHBoxLayout()
 
     search_bar = QLineEdit()
@@ -331,7 +333,7 @@ def create_product_card(product, category, main_window):
     card_layout.setSpacing(10)
     card_layout.setAlignment(Qt.AlignmentFlag.AlignTop)
 
-    # --- Image ---
+    # Images
     image_label = QLabel()
     image_label.setFixedSize(100, 100)
     image_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
@@ -376,7 +378,7 @@ def create_product_card(product, category, main_window):
     price_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
     card_layout.addWidget(price_label)
 
-    # --- Color and Quantity Controls ---
+    # QOL
     controls_layout = QHBoxLayout()
     controls_layout.setSpacing(10)
 
@@ -519,8 +521,9 @@ def create_cart_view(parent=None):
 
             remove_btn = QPushButton("Remove")
             remove_btn.setStyleSheet("""
-                QPushButton { background-color: #dc3545; color: white; border-radius: 4px; padding: 4px 8px; }
-                QPushButton:hover { background-color: #c82333; }
+
+                QPushButton { background: #dc3545; color: white; border: none; border-radius: 5px; padding: 6px 12px; }
+                QPushButton:hover { background: #b02a37; }
             """)
             remove_btn.clicked.connect(create_remove_handler(item))
             cart_table.setCellWidget(row, 5, remove_btn)

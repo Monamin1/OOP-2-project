@@ -7,6 +7,7 @@ from PyQt6.QtGui import QFont, QColor, QPixmap
 
 from ui_components import create_styled_line_edit
 from feedback_email import send_feedback_email
+from color_palette import get_table_style, get_title_style, FONT_FAMILY_TITLE
 import os
 
 def _create_base_login_widget():
@@ -24,8 +25,8 @@ def create_customer_login_widget(parent=None):
     layout.addSpacing(50)
     # Title
     title = QLabel("Login")
-    title.setStyleSheet("font-size: 45px; color: #000000;")
-    title.setFont(QFont("Times New Roman"))
+    title.setStyleSheet(get_title_style())
+    title.setFont(QFont(FONT_FAMILY_TITLE))
     title.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
     icon_label = QLabel()
@@ -130,23 +131,7 @@ def create_inventory_widget(main_window):
     header.setSectionResizeMode(2, QHeaderView.ResizeMode.Interactive)
     header.setSectionResizeMode(3, QHeaderView.ResizeMode.Interactive)
 
-    inventory_table.setStyleSheet("""
-        QTableWidget {
-            background-color: #ffffff;
-            color: #000000;
-            border: 1px solid #cccccc;
-            gridline-color: #e0e0e0;
-            selection-background-color: #0078d7;
-            selection-color: white;
-        }
-        QHeaderView::section {
-            background-color: #f0f0f0;
-            color: #000000;
-            padding: 4px;
-            border: 1px solid #cccccc;
-            font-size: 14px;
-        }
-    """)
+    inventory_table.setStyleSheet(get_table_style())
 
     def colorize_quantity_item(item):
         try:
