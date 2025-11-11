@@ -1,0 +1,108 @@
+{
+  "inventory": {
+    "CARA": {
+      "type": "Shoulder Bag",
+      "quantity": 50
+    },
+    "LIA": {
+      "type": "Shoulder Bag",
+      "quantity": 50
+    },
+    "QUI": {
+      "type": "Shoulder Bag",
+      "quantity": 50
+    },
+    "ANA": {
+      "type": "Shoulder Bag",
+      "quantity": 48
+    },
+    "HYE": {
+      "type": "Shoulder Bag",
+      "quantity": 50
+    },
+    "Baby": {
+      "type": "Shoulder Bag",
+      "quantity": 50
+    },
+    "BIA": {
+      "type": "Shoulder Bag",
+      "quantity": 50
+    },
+    "NYA": {
+      "type": "Sling Bag",
+      "quantity": 50
+    },
+    "ORA": {
+      "type": "Sling Bag",
+      "quantity": 50
+    },
+    "Normal": {
+      "type": "Tote Bag",
+      "quantity": 50
+    },
+    "Large": {
+      "type": "Tote Bag",
+      "quantity": 50
+    },
+    "MEG": {
+      "type": "Coin Purse",
+      "quantity": 50
+    },
+    "AURA": {
+      "type": "Coin Purse",
+      "quantity": 25
+    },
+    "EVA": {
+      "type": "Coin Purse",
+      "quantity": 50
+    },
+    "AVA": {
+      "type": "Coin Purse",
+      "quantity": 50
+    },
+    "Standard": {
+      "type": "Saddle Bag",
+      "quantity": 50
+    }
+  },
+  "orders": [
+    {
+      "buyer": {
+        "username": "monamin",
+        "name": "Gabriel Duenas",
+        "address": "Rodriguez Rizal",
+        "age": 21
+      },
+      "product": "ANA",
+      "category": "Shoulder Bag",
+      "material": "Faux Leather",
+      "quantity": 2,
+      "color": "Brown",
+      "price": 350,
+      "total": 700
+    },
+    {
+      "buyer": {
+        "username": "monamin",
+        "name": "Gabriel Duenas",
+        "address": "Rodriguez Rizal",
+        "age": 21
+      },
+      "product": "BABY",
+      "category": "Shoulder Bag",
+      "material": "Faux Leather",
+      "quantity": 2,
+      "color": "Brown",
+      "price": 300,
+      "total": 600
+    }
+  ],
+  "active_user": {
+    "username": "monamin",
+    "name": "Gabriel Duenas",
+    "address": "Rodriguez Rizal",
+    "age": 21
+  },
+  "cart_items": [],
+  "saved_at": "20251111_174827"
+}

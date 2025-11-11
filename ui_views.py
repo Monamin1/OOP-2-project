@@ -9,6 +9,7 @@ from ui_components import create_styled_line_edit, CollapsablePanel
 from feedback_email import send_feedback_email
 from admin_auth import (get_admin_credentials, save_admin_credentials,
                      remember_admin_login, get_remembered_admin, forget_admin_login)
+from customer_auth import (get_customers_data, save_customer, verify_customer_login)
 import os, json
 from persistence import save_file_state, load_file_state, get_save_files
 
@@ -41,15 +42,14 @@ def _create_base_login_widget():
     return view_widget, layout
 
 def create_customer_login_widget(parent=None):
-    widget = QWidget(parent)
-    layout = QVBoxLayout(widget)
-    layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
+    view_widget, layout = _create_base_login_widget()
 
-    layout.addSpacing(50)
-    # Title
+    #title
     title = QLabel("Login")
+    title.setAlignment(Qt.AlignmentFlag.AlignCenter)
     title.setStyleSheet("font-size: 45px; color: #000000;")
     title.setFont(QFont("Times New Roman"))
+
     title.setAlignment(Qt.AlignmentFlag.AlignCenter)
     title.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground, True)
     title.setContentsMargins(0, 0, 0, 0)
@@ -59,6 +59,195 @@ def create_customer_login_widget(parent=None):
     shadow_effect.setColor(QColor(50,50,50,180))
     shadow_effect.setOffset(4, 4)
     title.setGraphicsEffect(shadow_effect)
+
+
+    #customer_label
+    customer_label = QLabel("Customer")
+    customer_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+    customer_label.setStyleSheet("font-size: 18px; color: #000000;")
+    customer_label.setFont(QFont("Times New Roman"))
+    customer_label.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground, True)
+    customer_label.setContentsMargins(0, 0, 0, 0)
+
+    shadow_effect = QGraphicsDropShadowEffect()
+    shadow_effect.setBlurRadius(30)
+    shadow_effect.setColor(QColor(50,50,50,180))
+    shadow_effect.setOffset(4, 4)
+    customer_label.setGraphicsEffect(shadow_effect)
+
+
+    username_input = create_styled_line_edit("Username")
+    username_input.setFixedWidth(200)
+    password_input = create_styled_line_edit("Password")
+    password_input.setEchoMode(QLineEdit.EchoMode.Password)
+    
+    password_toggle_btn = create_password_toggle_button(password_input)
+    username_layout = QHBoxLayout()
+    password_layout = QHBoxLayout()
+    # Ensure both rows align to the left so the edits share the same left edge
+    # inside the fixed-width container.
+    username_layout.setAlignment(Qt.AlignmentFlag.AlignLeft)
+    password_layout.setAlignment(Qt.AlignmentFlag.AlignLeft)
+
+    fields_widget = QWidget()
+    fields_layout = QVBoxLayout(fields_widget)
+    fields_layout.setContentsMargins(0, 0, 0, 0)
+    fields_layout.setSpacing(10)
+    fields_widget.setFixedWidth(260)
+
+    username_layout.addWidget(username_input)
+    password_layout.addWidget(password_input)
+    password_layout.addWidget(password_toggle_btn)
+
+    fields_layout.addLayout(username_layout)
+    fields_layout.addLayout(password_layout)
+
+    login_btn = QPushButton("Login")
+    login_btn.setFixedSize(120, 30)
+    login_btn.setStyleSheet("background: #222222; color: white; border-radius: 5px;")
+    
+    register_btn = QPushButton("Register")
+    register_btn.setFixedSize(120, 30)
+    register_btn.setStyleSheet("background: #0078d7; color: white; border-radius: 5px;")
+    
+    # Connect Enter key to trigger login for username and password fields
+    username_input.returnPressed.connect(login_btn.click)
+    password_input.returnPressed.connect(login_btn.click)
+
+    def handle_customer_login():
+        username = username_input.text()
+        password = password_input.text()
+
+        if not username or not password:
+            QMessageBox.warning(view_widget, "Missing Info", "Please enter username and password.")
+            return
+
+        success, profile, message = verify_customer_login(username, password)
+        if success:
+            if parent:
+                parent.active_user = {
+                    "username": username,
+                    "name": profile["name"],
+                    "address": profile["address"],
+                    "age": profile["age"]
+                }
+                print("✅ Logged in customer:", parent.active_user)
+
+            if hasattr(parent, "switch_view"):
+                parent.switch_view("customer_catalog")
+        else:
+            msg_box = QMessageBox(view_widget)
+            msg_box.setIcon(QMessageBox.Icon.Warning)
+            msg_box.setText(message)
+            msg_box.setWindowTitle("Login Failed")
+            msg_box.exec()
+
+    def show_registration_dialog():
+        dialog = QDialog(view_widget)
+        dialog.setWindowTitle("Register")
+        dialog.setFixedWidth(350)
+        
+        dlg_layout = QVBoxLayout(dialog)
+        dlg_layout.setSpacing(10)
+        
+        # Username
+        reg_username = QLineEdit(dialog)
+        reg_username.setPlaceholderText("Username")
+        dlg_layout.addWidget(reg_username)
+        
+        # Password
+        reg_password = QLineEdit(dialog)
+        reg_password.setPlaceholderText("Password")
+        reg_password.setEchoMode(QLineEdit.EchoMode.Password)
+        reg_password_toggle = create_password_toggle_button(reg_password)
+        reg_password_layout = QHBoxLayout()
+        reg_password_layout.addWidget(reg_password)
+        reg_password_layout.addWidget(reg_password_toggle)
+        dlg_layout.addLayout(reg_password_layout)
+
+        # Confirm Password
+        reg_password_confirm = QLineEdit(dialog)
+        reg_password_confirm.setPlaceholderText("Confirm Password")
+        reg_password_confirm.setEchoMode(QLineEdit.EchoMode.Password)
+        reg_password_confirm_toggle = create_password_toggle_button(reg_password_confirm)
+        reg_password_confirm_layout = QHBoxLayout()
+        reg_password_confirm_layout.addWidget(reg_password_confirm)
+        reg_password_confirm_layout.addWidget(reg_password_confirm_toggle)
+        dlg_layout.addLayout(reg_password_confirm_layout)
+        
+        # Name
+        reg_name = QLineEdit(dialog)
+        reg_name.setPlaceholderText("Full Name")
+        dlg_layout.addWidget(reg_name)
+        
+        # Address
+        reg_address = QLineEdit(dialog)
+        reg_address.setPlaceholderText("Address")
+        dlg_layout.addWidget(reg_address)
+        
+        # Age
+        reg_age = QLineEdit(dialog)
+        reg_age.setPlaceholderText("Age")
+        dlg_layout.addWidget(reg_age)
+        
+        # Register button
+        register_confirm_btn = QPushButton("Register")
+        register_confirm_btn.setStyleSheet("background: #28a745; color: white; border-radius: 5px; padding: 5px;")
+        dlg_layout.addWidget(register_confirm_btn)
+        
+        def handle_registration():
+            username = reg_username.text().strip()
+            password = reg_password.text().strip()
+            confirm = reg_password_confirm.text().strip()
+            name = reg_name.text().strip()
+            address = reg_address.text().strip()
+            age = reg_age.text().strip()
+            
+            # Validation
+            if not username or not password or not name or not address or not age:
+                QMessageBox.warning(dialog, "Missing Info", "Please fill in all fields.")
+                return
+            
+            if not password or len(password) < 4:
+                QMessageBox.warning(dialog, "Weak Password", "Password must be at least 4 characters.")
+                return
+
+            # Confirm password matches
+            if password != confirm:
+                QMessageBox.warning(dialog, "Password Mismatch", "Password and confirmation do not match.")
+                return
+            
+            # Validate name (no numbers)
+            if any(char.isdigit() for char in name):
+                QMessageBox.warning(dialog, "Invalid Name", "Name cannot contain numbers.")
+                return
+            
+            # Validate age
+            try:
+                age_val = int(age)
+                if age_val <= 0 or age_val > 110:
+                    QMessageBox.warning(dialog, "Invalid Age", "Age must be between 1 and 110.")
+                    return
+            except (ValueError, TypeError):
+                QMessageBox.warning(dialog, "Invalid Age", "Age must be a valid number.")
+                return
+            
+            # Try to register
+            success, msg = save_customer(username, password, name, address, age)
+            if success:
+                QMessageBox.information(dialog, "Success", "Registration successful! You can now login.")
+                dialog.accept()
+            else:
+                QMessageBox.warning(dialog, "Registration Failed", msg)
+        
+        register_confirm_btn.clicked.connect(handle_registration)
+        
+        dialog.exec()
+
+    login_btn.clicked.connect(handle_customer_login)
+    register_btn.clicked.connect(show_registration_dialog)
+
+    layout.addSpacing(39)
 
     icon_label = QLabel()
     icon_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
@@ -75,63 +264,28 @@ def create_customer_login_widget(parent=None):
                         Qt.TransformationMode.SmoothTransformation)
         )
     layout.addWidget(icon_label, alignment=Qt.AlignmentFlag.AlignCenter)
+
     layout.addSpacing(10)
     layout.addWidget(title)
-
+    layout.addWidget(customer_label, alignment=Qt.AlignmentFlag.AlignCenter)
     layout.addSpacing(20)
-
-    name_input = create_styled_line_edit("Name")
-    layout.addWidget(name_input)
-    address_input = create_styled_line_edit("Address")
-    layout.addWidget(address_input)
-    age_input = create_styled_line_edit("Age")
-    layout.addWidget(age_input)
-
+    # Add the fixed-width container so both fields align their left edges
+    # while the whole group remains centered in the dialog.
+    layout.addWidget(fields_widget, alignment=Qt.AlignmentFlag.AlignCenter)
     layout.addSpacing(20)
-
-    # Login button
-    login_button = QPushButton("Login")
-    login_button.setFixedSize(120, 30)
-    login_button.setStyleSheet("background: #222222; color: white; border-radius: 5px;")
-    layout.addWidget(login_button, alignment=Qt.AlignmentFlag.AlignCenter)
     
-    # Connect Enter key to trigger login for all input fields
-    for input_field in (name_input, address_input, age_input):
-        input_field.returnPressed.connect(login_button.click)
+    # Login and Register buttons side by side
+    button_layout = QHBoxLayout()
+    button_layout.addStretch()
+    button_layout.addWidget(login_btn)
+    button_layout.addWidget(register_btn)
+    button_layout.addStretch()
+    layout.addLayout(button_layout)
+    
+    layout.addSpacing(20)
+    layout.addStretch()
 
-    def handle_login():
-        name = name_input.text().strip()
-        address = address_input.text().strip()
-        age = age_input.text().strip()
-
-        if not name or not address or not age:
-            QMessageBox.warning(widget, "Missing Info", "Please fill in all fields.")
-            return
-
-        try:
-            age_val = int(age)
-            if age_val <= 0 or age_val > 120:
-                raise ValueError()
-        except (ValueError, TypeError):
-            QMessageBox.warning(widget, "Invalid Age", "Please enter a valid numeric age (e.g. 25).")
-            return
-
-        # Store login info in main window
-        if parent:
-            parent.active_user = {
-                "name": name,
-                "address": address,
-                "age": age_val
-            }
-            print("Logged in user:", parent.active_user)
-
-        # Switch to customer page
-        if hasattr(parent, "switch_view"):
-            parent.switch_view("customer_catalog")
-
-    login_button.clicked.connect(handle_login)
-
-    return widget
+    return view_widget
 
 def create_inventory_widget(main_window):
     view_widget = QWidget()
@@ -243,8 +397,8 @@ def create_inventory_widget(main_window):
     orders_title.setGraphicsEffect(shadow_effect)
 
     orders_table = QTableWidget()
-    orders_table.setColumnCount(6)
-    orders_table.setHorizontalHeaderLabels(["Buyer", "Address", "Age", "Product", "Quantity", "Total"])
+    orders_table.setColumnCount(7)
+    orders_table.setHorizontalHeaderLabels(["Buyer", "Address", "Age", "Product", "Quantity", "Total", "Completed"])
     orders_header = orders_table.horizontalHeader()
     orders_header.setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
     # Make orders table read-only and behave like inventory table
@@ -318,6 +472,20 @@ def create_inventory_widget(main_window):
             it3 = QTableWidgetItem(order.get("product", ""))
             it4 = QTableWidgetItem(str(order.get("quantity", "")))
             it5 = QTableWidgetItem(str(order.get("total", "")))
+            # Create a checkbox for the "Completed" column
+            checkbox = QCheckBox()
+            checkbox.setStyleSheet("""
+                QCheckBox::indicator {
+                    width: 15px;
+                    height: 15px;
+                    border: 1px solid #888;
+                    border-radius: 3px;
+                }
+                QCheckBox::indicator:checked {
+                    background-color: #28a745;
+                    border: 1px solid #28a745;
+                }
+            """)
             # Make order cells non-editable
             for it in (it0, it1, it2, it3, it4, it5):
                 try:
@@ -330,6 +498,29 @@ def create_inventory_widget(main_window):
             orders_table.setItem(r, 3, it3)
             orders_table.setItem(r, 4, it4)
             orders_table.setItem(r, 5, it5)
+            # Add checkbox to the "Completed" column and center it
+            checkbox_widget = QWidget()
+            checkbox_layout = QHBoxLayout(checkbox_widget)
+            checkbox_layout.setContentsMargins(0, 0, 0, 0)
+            checkbox_layout.addWidget(checkbox, alignment=Qt.AlignmentFlag.AlignCenter)
+            orders_table.setCellWidget(r, 6, checkbox_widget)
+
+            # When checkbox is toggled, apply strikethrough to the row
+            def make_toggle_handler(row_idx):
+                def on_checkbox_toggled(checked):
+                    for col in range(6):  # Columns 0-5 (not the checkbox column)
+                        item = orders_table.item(row_idx, col)
+                        if item:
+                            if checked:
+                                font = item.font()
+                                font.setStrikeOut(True)
+                                item.setFont(font)
+                            else:
+                                font = item.font()
+                                font.setStrikeOut(False)
+                                item.setFont(font)
+                return on_checkbox_toggled
+            checkbox.stateChanged.connect(make_toggle_handler(r))
 
     # Buttons
     button_layout = QHBoxLayout()
@@ -361,6 +552,42 @@ def create_inventory_widget(main_window):
     layout.addLayout(button_layout)
     layout.addWidget(orders_title)
     layout.addWidget(orders_table)
+
+    # Orders action buttons
+    orders_button_layout = QHBoxLayout()
+    orders_button_layout.addStretch()
+    
+    remove_completed_btn = QPushButton("Remove Completed Orders")
+    remove_completed_btn.setStyleSheet("background: #dc3545; color: white; border-radius: 5px; padding: 5px 10px;")
+    
+    def remove_completed_orders():
+        # Find all checked rows and remove them
+        rows_to_remove = []
+        for r in range(orders_table.rowCount()):
+            checkbox_widget = orders_table.cellWidget(r, 6)
+            if checkbox_widget:
+                # Get the checkbox from the widget
+                checkbox = checkbox_widget.findChild(QCheckBox)
+                if checkbox and checkbox.isChecked():
+                    rows_to_remove.append(r)
+        
+        if not rows_to_remove:
+            QMessageBox.information(view_widget, "No Orders Selected", "No completed orders to remove.")
+            return
+        
+        # Remove orders from main_window.orders in reverse order to avoid index shifting
+        orders = getattr(main_window, "orders", []) or []
+        for r in sorted(rows_to_remove, reverse=True):
+            if r < len(orders):
+                orders.pop(r)
+        
+        refresh_orders()
+        QMessageBox.information(view_widget, "Removed", f"Removed {len(rows_to_remove)} completed order(s).")
+    
+    remove_completed_btn.clicked.connect(remove_completed_orders)
+    orders_button_layout.addWidget(remove_completed_btn)
+    
+    layout.addLayout(orders_button_layout)
 
 
 

@@ -1,0 +1,14 @@
+{
+  "test_user": {
+    "password": "pass123",
+    "name": "Test User",
+    "address": "123 Main St",
+    "age": 25
+  },
+  "monamin": {
+    "password": "1234",
+    "name": "Gabriel Duenas",
+    "address": "Rodriguez Rizal",
+    "age": 21
+  }
+}
