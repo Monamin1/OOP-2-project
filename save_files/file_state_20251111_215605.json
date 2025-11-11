@@ -1,0 +1,123 @@
+{
+  "inventory": {
+    "CARA": {
+      "type": "Shoulder Bag",
+      "quantity": 50
+    },
+    "LIA": {
+      "type": "Shoulder Bag",
+      "quantity": 50
+    },
+    "QUI": {
+      "type": "Shoulder Bag",
+      "quantity": 50
+    },
+    "ANA": {
+      "type": "Shoulder Bag",
+      "quantity": 50
+    },
+    "HYE": {
+      "type": "Shoulder Bag",
+      "quantity": 42
+    },
+    "Baby": {
+      "type": "Shoulder Bag",
+      "quantity": 50
+    },
+    "BIA": {
+      "type": "Shoulder Bag",
+      "quantity": 50
+    },
+    "NYA": {
+      "type": "Sling Bag",
+      "quantity": 50
+    },
+    "ORA": {
+      "type": "Sling Bag",
+      "quantity": 50
+    },
+    "Normal": {
+      "type": "Tote Bag",
+      "quantity": 50
+    },
+    "Large": {
+      "type": "Tote Bag",
+      "quantity": 50
+    },
+    "MEG": {
+      "type": "Coin Purse",
+      "quantity": 50
+    },
+    "AURA": {
+      "type": "Coin Purse",
+      "quantity": 25
+    },
+    "EVA": {
+      "type": "Coin Purse",
+      "quantity": 50
+    },
+    "AVA": {
+      "type": "Coin Purse",
+      "quantity": 50
+    },
+    "Standard": {
+      "type": "Saddle Bag",
+      "quantity": 50
+    }
+  },
+  "orders": [
+    {
+      "buyer": {
+        "username": "lance",
+        "name": "lance bolito",
+        "address": "qc",
+        "age": 21
+      },
+      "product": "HYE",
+      "category": "Shoulder Bag",
+      "material": "Faux Leather",
+      "quantity": 4,
+      "color": "Gray",
+      "price": 350,
+      "total": 1400
+    },
+    {
+      "buyer": {
+        "username": "lance",
+        "name": "lance bolito",
+        "address": "qc",
+        "age": 21
+      },
+      "product": "BABY",
+      "category": "Shoulder Bag",
+      "material": "Faux Leather",
+      "quantity": 5,
+      "color": "Brown",
+      "price": 300,
+      "total": 1500
+    },
+    {
+      "buyer": {
+        "username": "lance",
+        "name": "lance bolito",
+        "address": "qc",
+        "age": 21
+      },
+      "product": "HYE",
+      "category": "Shoulder Bag",
+      "material": "Faux Leather",
+      "quantity": 4,
+      "color": "Choco Brown",
+      "price": 350,
+      "total": 1400
+    }
+  ],
+  "active_user": {
+    "username": "lance",
+    "name": "lance bolito",
+    "address": "qc",
+    "age": 21
+  },
+  "cart_items": [],
+  "saved_at": "20251111_215605"
+}

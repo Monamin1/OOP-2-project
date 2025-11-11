@@ -10,5 +10,17 @@
     "name": "Gabriel Duenas",
     "address": "Rodriguez Rizal",
     "age": 21
+  },
+  "gabgab": {
+    "password": "1234",
+    "name": "gabriel duanes",
+    "address": "rizal",
+    "age": 21
+  },
+  "lance": {
+    "password": "hello",
+    "name": "lance bolito",
+    "address": "qc",
+    "age": 21
   }
 }

@@ -12,7 +12,7 @@ from startup_views import create_startup_splash, create_mode_select_view
 class MainWindow(QMainWindow):
     def __init__(self, initial_view='customer'):
         super().__init__()
-        self.setWindowTitle("Login")
+        self.setWindowTitle("Sisit")
         self.resize(1200, 650)
 
         self.active_user = None
