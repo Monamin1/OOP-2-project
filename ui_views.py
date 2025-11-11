@@ -271,7 +271,7 @@ def create_customer_login_widget(parent=None):
     login_btn.clicked.connect(handle_customer_login)
     register_btn.clicked.connect(show_registration_dialog)
 
-    layout.addSpacing(39)
+    layout.addStretch(1)
 
     icon_label = QLabel()
     icon_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
@@ -295,8 +295,6 @@ def create_customer_login_widget(parent=None):
     layout.addWidget(title)
     layout.addWidget(customer_label, alignment=Qt.AlignmentFlag.AlignCenter)
     layout.addSpacing(20)
-    # Add the fixed-width container so both fields align their left edges
-    # while the whole group remains centered in the dialog.
     layout.addWidget(fields_widget, alignment=Qt.AlignmentFlag.AlignCenter)
     layout.addSpacing(20)
     
@@ -309,7 +307,7 @@ def create_customer_login_widget(parent=None):
     layout.addLayout(button_layout)
     
     layout.addSpacing(20)
-    layout.addStretch()
+    layout.addStretch(1)
 
     return view_widget
 
@@ -965,7 +963,7 @@ def create_admin_login_widget(main_window):
 
     login_btn.clicked.connect(handle_admin_login)
 
-    layout.addSpacing(39)
+    layout.addStretch(1)
 
     icon_label = QLabel()
     icon_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
@@ -995,7 +993,7 @@ def create_admin_login_widget(main_window):
     layout.addWidget(login_btn, alignment=Qt.AlignmentFlag.AlignCenter)
     layout.addSpacing(20)
     layout.addWidget(remember_checkbox, alignment=Qt.AlignmentFlag.AlignCenter)
-    layout.addStretch()
+    layout.addStretch(1)
 
     return view_widget
 

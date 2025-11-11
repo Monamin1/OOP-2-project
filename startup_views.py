@@ -54,11 +54,10 @@ def set_login_background(widget):
 def create_startup_splash(parent=None):
 
     widget = QWidget(parent)
-    widget.setFixedSize(800, 500)
     layout = QVBoxLayout(widget)
-    layout.addSpacing(100)
-    layout.setAlignment(Qt.AlignmentFlag.AlignRight)
+    layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
     widget.setStyleSheet("background-color: white;")
+    layout.addStretch(1)
 
     logo = QLabel()
     logo.setAlignment(Qt.AlignmentFlag.AlignCenter)
@@ -79,7 +78,7 @@ def create_startup_splash(parent=None):
                           Qt.TransformationMode.SmoothTransformation)
         )
 
-    layout.addWidget(logo)
+    layout.addWidget(logo, alignment=Qt.AlignmentFlag.AlignCenter)
 
     def go_to_next():
         if parent and hasattr(parent, "switch_view"):
@@ -87,20 +86,18 @@ def create_startup_splash(parent=None):
 
     QTimer.singleShot(3000, go_to_next)
 
+    layout.addStretch(1)
+
     return widget
 
 def create_mode_select_view(parent=None):
-    view_widget, _ = _create_base_login_widget()
-
-    set_login_background(view_widget)
-
     widget = QWidget(parent)
     layout = QVBoxLayout(widget)
-    layout.setAlignment(Qt.AlignmentFlag.AlignTop)
+    layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
     layout.setContentsMargins(0, 0, 0, 0)
     layout.setSpacing(20)
 
-    layout.addSpacing(170)
+    layout.addStretch(1)
 
     set_login_background(widget)
 

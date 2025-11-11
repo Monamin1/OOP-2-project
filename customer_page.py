@@ -80,7 +80,7 @@ def create_customer_page(parent=None):
 
     cart_button = QPushButton()
     cart_button.setFlat(True)
-    cart_button.setFixedSize(100, 100)
+    cart_button.setFixedSize(150, 100)
     cart_button.setStyleSheet("""
         QPushButton {
             border: none;
@@ -88,17 +88,15 @@ def create_customer_page(parent=None):
     """)
     cart_layout = QHBoxLayout(cart_button)
     cart_layout.setSpacing(5)
+    cart_layout.setAlignment(Qt.AlignmentFlag.AlignCenter)
     cart_icon_label = QLabel("🛒")
     cart_icon_label.setStyleSheet("font-size: 30px;")
     cart_count_label = QLabel("(0)")
-    cart_count_label.setStyleSheet("""
-        font-size: 25px;
-        font-weight: bold;
-    """)
+    cart_count_label.setStyleSheet("font-size: 25px; font-weight: bold;")
     parent.cart_count_label = cart_count_label
     cart_layout.addWidget(cart_icon_label)
     cart_layout.addWidget(cart_count_label)
-    header_layout.addWidget(cart_button, 0, 2, alignment=Qt.AlignmentFlag.AlignCenter)
+    header_layout.addWidget(cart_button, 0, 2, alignment=Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter)
     layout.addLayout(header_layout)
 
     desc = QLabel("Select color and quantity for each item, then click Buy to order.")
