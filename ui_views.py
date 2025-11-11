@@ -41,8 +41,29 @@ def _create_base_login_widget():
     layout.setContentsMargins(20, 20, 20, 20)
     return view_widget, layout
 
+def set_login_background(view_widget):
+    """Set background_photo.png with semi-transparent overlay so widgets remain visible."""
+    base_dir = os.path.dirname(os.path.abspath(__file__))
+    bg_path = os.path.join(base_dir, "assets", "background_photo.png")
+    
+    if os.path.exists(bg_path):
+        # Use stylesheet with semi-transparent background instead of palette
+        # This allows widgets to render on top properly
+        view_widget.setStyleSheet(f"""
+            QWidget {{
+                background-image: url("{bg_path}");
+                background-position: center;
+                background-repeat: no-repeat;
+                background-attachment: fixed;
+                background-color: rgba(255, 255, 255, 0.7);
+            }}
+        """)
+
 def create_customer_login_widget(parent=None):
     view_widget, layout = _create_base_login_widget()
+    
+    # Apply background image
+    set_login_background(view_widget)
 
     #title
     title = QLabel("Login")
@@ -79,21 +100,24 @@ def create_customer_login_widget(parent=None):
     username_input = create_styled_line_edit("Username")
     username_input.setFixedWidth(200)
     password_input = create_styled_line_edit("Password")
+    username_input.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground, True)
+    password_input.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground, True)
     password_input.setEchoMode(QLineEdit.EchoMode.Password)
     
     password_toggle_btn = create_password_toggle_button(password_input)
     username_layout = QHBoxLayout()
     password_layout = QHBoxLayout()
-    # Ensure both rows align to the left so the edits share the same left edge
-    # inside the fixed-width container.
     username_layout.setAlignment(Qt.AlignmentFlag.AlignLeft)
     password_layout.setAlignment(Qt.AlignmentFlag.AlignLeft)
 
     fields_widget = QWidget()
+    fields_widget.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground, True)
+    fields_widget.setStyleSheet("background: transparent;")
     fields_layout = QVBoxLayout(fields_widget)
     fields_layout.setContentsMargins(0, 0, 0, 0)
     fields_layout.setSpacing(10)
     fields_widget.setFixedWidth(260)
+
 
     username_layout.addWidget(username_input)
     password_layout.addWidget(password_input)
@@ -251,6 +275,8 @@ def create_customer_login_widget(parent=None):
 
     icon_label = QLabel()
     icon_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+    # Make the label transparent so PNG transparency shows through
+    icon_label.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground, True)
 
     base_dir = os.path.dirname(os.path.abspath(__file__))
     icon_path = os.path.join(base_dir, "assets", "login_icon.png")
@@ -838,6 +864,9 @@ def create_inventory_widget(main_window):
 
 def create_admin_login_widget(main_window):
     view_widget, layout = _create_base_login_widget()
+    
+    # Apply background image
+    set_login_background(view_widget)
 
     #title
     title = QLabel("Login")
@@ -940,6 +969,8 @@ def create_admin_login_widget(main_window):
 
     icon_label = QLabel()
     icon_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+    # Make the label transparent so PNG transparency shows through
+    icon_label.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground, True)
 
     base_dir = os.path.dirname(os.path.abspath(__file__))
     icon_path = os.path.join(base_dir, "assets", "login_icon.png")

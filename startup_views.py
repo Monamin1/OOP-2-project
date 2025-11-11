@@ -2,6 +2,54 @@ from PyQt6.QtWidgets import QWidget, QVBoxLayout, QLabel, QGraphicsOpacityEffect
 from PyQt6.QtCore import Qt, QPropertyAnimation, QEasingCurve, QTimer
 from PyQt6.QtGui import QPixmap, QFont, QColor
 import os
+from ui_views import _create_base_login_widget
+
+def set_login_background(widget):
+
+    # Locate the background image dynamically
+    base_dir = os.path.dirname(os.path.abspath(__file__))
+    bg_path = os.path.join(base_dir, "assets", "background_photo.png")
+
+    if not os.path.exists(bg_path):
+        print("Background image not found:", bg_path)
+        return
+
+    # Create QLabel for the background image
+    bg_label = QLabel(widget)
+    bg_label.setScaledContents(True)
+    bg_label.lower()  # Push behind all other widgets
+    bg_label.setGeometry(0, 0, widget.width(), widget.height())
+
+    # Load the pixmap initially
+    pixmap = QPixmap(bg_path)
+    bg_label.setPixmap(
+        pixmap.scaled(
+            widget.size(),
+            Qt.AspectRatioMode.KeepAspectRatioByExpanding,
+            Qt.TransformationMode.SmoothTransformation
+        )
+    )
+
+    # Keep references
+    widget._bg_label = bg_label
+    widget._bg_pixmap = pixmap
+
+    # Update on resize
+    def resize_event(event):
+        if hasattr(widget, "_bg_label") and hasattr(widget, "_bg_pixmap"):
+            widget._bg_label.setGeometry(0, 0, widget.width(), widget.height())
+            widget._bg_label.setPixmap(
+                widget._bg_pixmap.scaled(
+                    widget.size(),
+                    Qt.AspectRatioMode.KeepAspectRatioByExpanding,
+                    Qt.TransformationMode.SmoothTransformation
+                )
+            )
+        event.accept()
+
+    # Override the widget’s resize event
+    widget.resizeEvent = resize_event
+
 
 def create_startup_splash(parent=None):
 
@@ -42,6 +90,9 @@ def create_startup_splash(parent=None):
     return widget
 
 def create_mode_select_view(parent=None):
+    view_widget, _ = _create_base_login_widget()
+
+    set_login_background(view_widget)
 
     widget = QWidget(parent)
     layout = QVBoxLayout(widget)
@@ -49,9 +100,27 @@ def create_mode_select_view(parent=None):
     layout.setContentsMargins(0, 0, 0, 0)
     layout.setSpacing(20)
 
-    layout.addSpacing(250)
+    layout.addSpacing(170)
 
-    widget.setStyleSheet("background-color: white;")
+    set_login_background(widget)
+
+    icon_label = QLabel()
+    icon_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+    # Make the label transparent so PNG transparency shows through
+    icon_label.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground, True)
+
+    base_dir = os.path.dirname(os.path.abspath(__file__))
+    icon_path = os.path.join(base_dir, "assets", "login_icon.png")
+
+    pixmap = QPixmap(icon_path)
+
+    if not pixmap.isNull():
+        icon_label.setPixmap(
+            pixmap.scaled(80, 80,
+                        Qt.AspectRatioMode.KeepAspectRatio,
+                        Qt.TransformationMode.SmoothTransformation)
+        )
+    layout.addWidget(icon_label, alignment=Qt.AlignmentFlag.AlignCenter)
 
     # Title
     title = QLabel("Hello, select a mode: ")
