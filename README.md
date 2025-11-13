@@ -15,7 +15,7 @@ By providing a centralized and user-friendly platform, it reduces repetitive tas
 ## Libraries
   - PyQt6
   - dotenv<br/>
-### Built-in python libraries
+### Python Standard libraries
   - os, sys, pathlib
   - json
   - datetime
