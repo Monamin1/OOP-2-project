@@ -1,9 +1,9 @@
 # Sisit: Inventory Management System
 
-Manual product tracking is time consuming and prone to human error, making it difficult to keep up with the demands of a fast paced market. The Inventory Management System for SISIT Bag Retail Brand aims to aid these challenges, innovation of the inventory processes through a Python based application that is developed with the PyQt6 library.
+The process of manual product tracking is time-consuming and it has human error as one of the risks involved which makes it hard to cater to the needs of a fast-moving market. The project of Inventory Management System for SISIT Bag Retail Brand is intended to address these issues by revolutionizing the inventory processes through the development of a Python-based application utilizing the PyQt6 library.
 
 ## Project Objective:
-By providing a centralized and user-friendly platform, it reduces repetitive tasks, minimizes human error, and ensures data accuracy. Additionally, its built-in search and sorting functions make it easier for users to manage large inventories effectively.
+This centralization of the process along with a user-friendly interface leads to the reduction of repetitive tasks, the minimization of human errors, and the guarantee of data accuracy. Moreover, the search and sort functions available to users are of great help in the effective management of large inventories.
 
 ## Key Features:
   - Role based log-in System
