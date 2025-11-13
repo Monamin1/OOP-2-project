@@ -14,7 +14,7 @@ import os, json
 from persistence import save_file_state, load_file_state, get_save_files
 
 def create_password_toggle_button(password_input):
-    toggle_btn = QPushButton("⊙")  # Eye icon
+    toggle_btn = QPushButton("⊙")
     toggle_btn.setFixedWidth(40)
     toggle_btn.setStyleSheet("""
         QPushButton {
@@ -26,10 +26,10 @@ def create_password_toggle_button(password_input):
     def toggle_password_visibility():
         if password_input.echoMode() == QLineEdit.EchoMode.Password:
             password_input.setEchoMode(QLineEdit.EchoMode.Normal)
-            toggle_btn.setText("–")  # Closed eye
+            toggle_btn.setText("–")
         else:
             password_input.setEchoMode(QLineEdit.EchoMode.Password)
-            toggle_btn.setText("⊙")  # Open eye
+            toggle_btn.setText("⊙")
     
     toggle_btn.clicked.connect(toggle_password_visibility)
     return toggle_btn
@@ -47,8 +47,6 @@ def set_login_background(view_widget):
     bg_path = os.path.join(base_dir, "assets", "background_photo.png")
     
     if os.path.exists(bg_path):
-        # Use stylesheet with semi-transparent background instead of palette
-        # This allows widgets to render on top properly
         view_widget.setStyleSheet(f"""
             QWidget {{
                 background-image: url("{bg_path}");
@@ -62,7 +60,6 @@ def set_login_background(view_widget):
 def create_customer_login_widget(parent=None):
     view_widget, layout = _create_base_login_widget()
     
-    # Apply background image
     set_login_background(view_widget)
 
     #title
@@ -134,7 +131,7 @@ def create_customer_login_widget(parent=None):
     register_btn.setFixedSize(120, 30)
     register_btn.setStyleSheet("background: #0078d7; color: white; border-radius: 5px;")
     
-    # Connect Enter key to trigger login for username and password fields
+
     username_input.returnPressed.connect(login_btn.click)
     password_input.returnPressed.connect(login_btn.click)
 
@@ -474,11 +471,11 @@ def create_inventory_widget(main_window):
             status_item = QTableWidgetItem(status)
             status_item.setBackground(color)
             status_item.setForeground(QColor("white"))
-            # Prevent status cell from being selected so its colors don't get overridden
+
             try:
                 status_item.setFlags(status_item.flags() & ~Qt.ItemFlag.ItemIsSelectable)
             except Exception:
-                # Fallback for PyQt versions where ItemFlag bitwise ops differ
+
                 pass
             inventory_table.setItem(row, 3, status_item)
 
@@ -496,7 +493,7 @@ def create_inventory_widget(main_window):
             it3 = QTableWidgetItem(order.get("product", ""))
             it4 = QTableWidgetItem(str(order.get("quantity", "")))
             it5 = QTableWidgetItem(str(order.get("total", "")))
-            # Create a checkbox for the "Completed" column
+
             checkbox = QCheckBox()
             checkbox.setStyleSheet("""
                 QCheckBox::indicator {
@@ -510,7 +507,7 @@ def create_inventory_widget(main_window):
                     border: 1px solid #28a745;
                 }
             """)
-            # Make order cells non-editable
+
             for it in (it0, it1, it2, it3, it4, it5):
                 try:
                     it.setFlags(it.flags() & ~Qt.ItemFlag.ItemIsEditable)
@@ -522,17 +519,17 @@ def create_inventory_widget(main_window):
             orders_table.setItem(r, 3, it3)
             orders_table.setItem(r, 4, it4)
             orders_table.setItem(r, 5, it5)
-            # Add checkbox to the "Completed" column and center it
+
             checkbox_widget = QWidget()
             checkbox_layout = QHBoxLayout(checkbox_widget)
             checkbox_layout.setContentsMargins(0, 0, 0, 0)
             checkbox_layout.addWidget(checkbox, alignment=Qt.AlignmentFlag.AlignCenter)
             orders_table.setCellWidget(r, 6, checkbox_widget)
 
-            # When checkbox is toggled, apply strikethrough to the row
+
             def make_toggle_handler(row_idx):
                 def on_checkbox_toggled(checked):
-                    for col in range(6):  # Columns 0-5 (not the checkbox column)
+                    for col in range(6):
                         item = orders_table.item(row_idx, col)
                         if item:
                             if checked:
@@ -585,12 +582,11 @@ def create_inventory_widget(main_window):
     remove_completed_btn.setStyleSheet("background: #dc3545; color: white; border-radius: 5px; padding: 5px 10px;")
     
     def remove_completed_orders():
-        # Find all checked rows and remove them
         rows_to_remove = []
         for r in range(orders_table.rowCount()):
             checkbox_widget = orders_table.cellWidget(r, 6)
             if checkbox_widget:
-                # Get the checkbox from the widget
+
                 checkbox = checkbox_widget.findChild(QCheckBox)
                 if checkbox and checkbox.isChecked():
                     rows_to_remove.append(r)
@@ -599,7 +595,7 @@ def create_inventory_widget(main_window):
             QMessageBox.information(view_widget, "No Orders Selected", "No completed orders to remove.")
             return
         
-        # Remove orders from main_window.orders in reverse order to avoid index shifting
+
         orders = getattr(main_window, "orders", []) or []
         for r in sorted(rows_to_remove, reverse=True):
             if r < len(orders):
@@ -630,7 +626,7 @@ def create_inventory_widget(main_window):
             old_password.setPlaceholderText("Current Password")
             old_password.setEchoMode(QLineEdit.EchoMode.Password)
             
-            # Add toggle button for old password
+            # old password
             old_password_toggle = create_password_toggle_button(old_password)
             old_password_layout = QHBoxLayout()
             old_password_layout.addWidget(old_password)
@@ -642,7 +638,7 @@ def create_inventory_widget(main_window):
             new_password.setPlaceholderText("New Password")
             new_password.setEchoMode(QLineEdit.EchoMode.Password)
             
-            # Add toggle button for new password
+            # new password
             new_password_toggle = create_password_toggle_button(new_password)
             new_password_layout = QHBoxLayout()
             new_password_layout.addWidget(new_password)
@@ -681,7 +677,7 @@ def create_inventory_widget(main_window):
             layout.addLayout(new_password_layout)
             layout.addWidget(save_btn)
 
-    # Create settings panel
+
     settings_panel = CollapsablePanel(view_widget)
     
     def change_credentials():
@@ -707,7 +703,6 @@ def create_inventory_widget(main_window):
     """)
     settings_btn.clicked.connect(settings_panel.toggle)
 
-    # Add settings button to layout
     title_layout = QHBoxLayout()
     title_layout.addWidget(settings_btn)
     title_layout.addWidget(title, alignment=Qt.AlignmentFlag.AlignCenter)
@@ -741,10 +736,8 @@ def create_inventory_widget(main_window):
                     QMessageBox.information(view_widget, "Already Full", f"{prod_name} is already at full stock.")
                     return
 
-                # Restore to default quantity (50) for all product types
                 inv[prod_name]["quantity"] = max_stock
 
-                # Update any product cards in the customer view
                 if hasattr(main_window, 'product_card_map'):
                     card = main_window.product_card_map.get(prod_name)
                     if card:
@@ -863,7 +856,6 @@ def create_inventory_widget(main_window):
 def create_admin_login_widget(main_window):
     view_widget, layout = _create_base_login_widget()
     
-    # Apply background image
     set_login_background(view_widget)
 
     #title
@@ -932,11 +924,9 @@ def create_admin_login_widget(main_window):
     login_btn.setFixedSize(120, 30)
     login_btn.setStyleSheet("background: #222222; color: white; border-radius: 5px;")
     
-    # Connect Enter key to trigger login for username and password fields
     username_input.returnPressed.connect(login_btn.click)
     password_input.returnPressed.connect(login_btn.click)
 
-    # Check for remembered credentials
     remembered = get_remembered_admin()
     if remembered and remembered.get("username") and remembered.get("password"):
         username_input.setText(remembered["username"])
@@ -967,7 +957,7 @@ def create_admin_login_widget(main_window):
 
     icon_label = QLabel()
     icon_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-    # Make the label transparent so PNG transparency shows through
+
     icon_label.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground, True)
 
     base_dir = os.path.dirname(os.path.abspath(__file__))
@@ -988,7 +978,7 @@ def create_admin_login_widget(main_window):
     layout.addWidget(admin_label, alignment=Qt.AlignmentFlag.AlignCenter)
     layout.addSpacing(20)
     layout.addWidget(username_input)
-    layout.addLayout(password_layout)  # Use the layout with toggle button
+    layout.addLayout(password_layout)
     layout.addSpacing(20)
     layout.addWidget(login_btn, alignment=Qt.AlignmentFlag.AlignCenter)
     layout.addSpacing(20)

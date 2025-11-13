@@ -57,7 +57,6 @@ def get_initial_inventory():
     if state and 'inventory' in state:
         return state['inventory']
     
-    # Default inventory data if no save exists
     return {
         "CARA": {"type": "Shoulder Bag", "quantity": 50},
         "LIA": {"type": "Shoulder Bag", "quantity": 50},

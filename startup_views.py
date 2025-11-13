@@ -6,7 +6,7 @@ from ui_views import _create_base_login_widget
 
 def set_login_background(widget):
 
-    # Locate the background image dynamically
+
     base_dir = os.path.dirname(os.path.abspath(__file__))
     bg_path = os.path.join(base_dir, "assets", "background_photo.png")
 
@@ -14,13 +14,13 @@ def set_login_background(widget):
         print("Background image not found:", bg_path)
         return
 
-    # Create QLabel for the background image
+
     bg_label = QLabel(widget)
     bg_label.setScaledContents(True)
-    bg_label.lower()  # Push behind all other widgets
+    bg_label.lower()
     bg_label.setGeometry(0, 0, widget.width(), widget.height())
 
-    # Load the pixmap initially
+
     pixmap = QPixmap(bg_path)
     bg_label.setPixmap(
         pixmap.scaled(
@@ -30,7 +30,6 @@ def set_login_background(widget):
         )
     )
 
-    # Keep references
     widget._bg_label = bg_label
     widget._bg_pixmap = pixmap
 
@@ -47,7 +46,6 @@ def set_login_background(widget):
             )
         event.accept()
 
-    # Override the widget’s resize event
     widget.resizeEvent = resize_event
 
 
@@ -103,7 +101,7 @@ def create_mode_select_view(parent=None):
 
     icon_label = QLabel()
     icon_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-    # Make the label transparent so PNG transparency shows through
+
     icon_label.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground, True)
 
     base_dir = os.path.dirname(os.path.abspath(__file__))

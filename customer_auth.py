@@ -15,11 +15,11 @@ def get_customers_data():
 def save_customer(username, password, name, address, age):
     customers = get_customers_data()
     
-    # Check if username already exists
+    # username already exists
     if username in customers:
         return False, "Username already exists"
     
-    # Validate name (no numbers)
+    # Validate name
     if not name or any(char.isdigit() for char in name):
         return False, "Name cannot contain numbers"
     
@@ -57,8 +57,7 @@ def verify_customer_login(username, password):
     if customers[username]["password"] != password:
         return False, None, "Invalid username or password"
     
-    # Return success, profile data
     profile = customers[username].copy()
-    profile.pop("password", None)  # Don't return password
+    profile.pop("password", None)
     
     return True, profile, "Login successful"

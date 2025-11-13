@@ -91,12 +91,11 @@ class MainWindow(QMainWindow):
         self.collapse_btn = create_menu_button()
         self.collapse_btn.clicked.connect(self.toggle_panel)
 
-        # This widget will hold the current view (admin or consumer)
         self.view_container = QWidget()
         self.view_layout = QVBoxLayout(self.view_container)
         self.view_layout.setContentsMargins(0,0,0,0)
 
-        # Add widgets to main layout
+        # Add widgets
         self.main_layout.addWidget(self.collapse_btn, alignment=Qt.AlignmentFlag.AlignLeft)
         self.main_layout.addWidget(self.view_container)
 
@@ -147,7 +146,7 @@ class MainWindow(QMainWindow):
     def update_cart_count(self):
         if self.cart_count_label:
             total_items = sum(item['quantity'] for item in self.cart_items)
-            # Ensure the format is consistent with fixed-width space
+
             self.cart_count_label.setText(f"({total_items} )")
 
     def update_product_card_display(self, product_name: str):
@@ -157,7 +156,6 @@ class MainWindow(QMainWindow):
 
         inv = self.inventory_data
         
-        # Only update if the product is actually tracked in inventory and not 'Customized'
         if product_name in inv and "Customized" not in product_name:
             current_stock = inv[product_name]["quantity"]
             new_stock_text = f"  —  {current_stock} left" if current_stock > 0 else "  —  Out of Stock"
@@ -169,6 +167,6 @@ class MainWindow(QMainWindow):
             if current_stock == 0:
                 card.buy_btn.setEnabled(False)
                 card.buy_btn.setText("Out of Stock")
-            elif not card.buy_btn.isEnabled(): # Re-enable if stock becomes > 0
+            elif not card.buy_btn.isEnabled():
                 card.buy_btn.setEnabled(True)
                 card.buy_btn.setText("Add to Cart")
